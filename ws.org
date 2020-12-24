@@ -2,7 +2,7 @@
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil
 #+options: f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+options: timestamp:t title:t toc:t todo:t |:t
-#+title: ws
+#+title:
 #+date: <2020-12-24 Thu>
 #+PROPERTY: header-args  :mkdirp yes
 
@@ -177,6 +177,7 @@
     module Options where
 
     import XMonad
+    import qualified XMonad.Actions.Search as S
 
     -- The modifier key to be used for most keybindings
     -- I have it set to super (the Windows key)
@@ -235,7 +236,6 @@
     -- Theme                                                               ---
     ---------------------------------------------------------------------------
 
-    myFont = "xft:Ubuntu Nerd Font:size=10"
     rofiTheme theme = "~/.config/rofi/themes/" ++ theme ++ ".rasi" -- Rofi theme directory
 
     myBorderWidth :: Dimension
@@ -253,12 +253,79 @@
     myTabActiveTextColour     = "#282C34"
     myTabInactiveTextColour   = "#D0D0D0"
 
+    myFocusFollowsMouse  = False
+    myClickJustFocuses   = True
+
+    base03  = "#002b36"
+    base02  = "#073642"
+    base01  = "#586e75"
+    base00  = "#657b83"
+    base0   = "#839496"
+    base1   = "#93a1a1"
+    base2   = "#eee8d5"
+    base3   = "#fdf6e3"
+    yellow  = "#b58900"
+    orange  = "#cb4b16"
+    red     = "#dc322f"
+    magenta = "#d33682"
+    violet  = "#6c71c4"
+    blue    = "#268bd2"
+    cyan    = "#2aa198"
+    green       = "#859900"
+
+    -- sizes
+    gap         = 10
+    topbar      = 10
+    myBorder    =  2
+    prompt :: Dimension
+    prompt      = 30
+    status      = 20
+
+
+    myNormalBorderColor     = "#000000"
+    myFocusedBorderColor    = active
+
+    active      = blue
+    activeWarn  = red
+    inactive    = base02
+    focusColor  = blue
+    unfocusColor = base02
+
+    myFont       = "xft:NotoSansMono Nerd Font:style=Regular:size=12:antialias=true:hinting=true"
+    myMediumFont = "xft:NotoSansMono Nerd Font:style=Regular:size=32:antialias=true:hinting=true"
+    myBigFont    = "xft:NotoSansMono Nerd Font:style=Regular:size=12:antialias=true:hinting=true"
+    myLargeFont  = "xft:NotoSansMono Nerd Font:style=Bold:size=60:antialias=true:hinting=true"
+
+
+  #+end_src
+
+  Search engines:
+
+  #+begin_src haskell -n
+    archwiki, news, reddit, urban :: S.SearchEngine
+
+    archwiki = S.searchEngine "archwiki" "https://wiki.archlinux.org/index.php?search="
+    news     = S.searchEngine "news" "https://news.google.com/search?q="
+    reddit   = S.searchEngine "reddit" "https://www.reddit.com/search/?q="
+    urban    = S.searchEngine "urban" "https://www.urbandictionary.com/define.php?term="
+
+    searchList :: [(String, S.SearchEngine)]
+    searchList = [ ("g", S.google)
+                 , ("h", S.hoogle)
+                 , ("w", S.wikipedia)
+                 , ("a", archwiki)
+                 , ("n", news)
+                 , ("r", reddit)
+                 , ("u", urban)
+                 , ("c", S.hackage)
+                 ]
   #+end_src
 
 * src/MyKeys.hs [0/2]
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/MyKeys.hs"
   :END:
+
 
   - [ ] [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-ShowText.html][XMonad.Actions.ShowText]] -- ShowText displays text for sometime on the screen.
   - [ ] Next we'll be adding [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] description
@@ -270,7 +337,9 @@
     (myKeys,myCheatsheetKey)
     where
 
-    import System.Exit (exitSuccess)
+    -- import System.IO
+    import Data.Char (isSpace, toUpper) --isSpace?
+    import System.Exit -- (exitSuccess)
     import XMonad
     import XMonad.Layout.MultiToggle
     import XMonad.Layout.MultiToggle.Instances
@@ -279,6 +348,12 @@
     import XMonad.Util.NamedActions -- Allows labelling of keybindings
     import qualified XMonad.StackSet as W
     import XMonad.Util.NamedScratchpad
+
+    import XMonad.Prompt
+    import XMonad.Prompt.ConfirmPrompt          -- don't just hard quit
+    import XMonad.Prompt.FuzzyMatch             -- (ref:fuzzyM) TODO
+    import XMonad.Prompt.Man
+    import qualified XMonad.Actions.Search as S
 
     -- Which programs to use as defaults
     import Options
@@ -330,7 +405,7 @@
 
   #+begin_src haskell -n
         subKeys "Core"
-        [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ io exitSuccess)
+        [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ confirmPrompt hotPromptTheme "exit" $ io (exitWith ExitSuccess))
         , ("M-q",                     addName "Recompile & restart"    $ spawn myBuildScript)
         , ("C-<Escape>",              addName "Application launcher"   $ spawn myAppM)
         , ("M-S-c",                   addName "Close window"           $ kill)
@@ -431,7 +506,13 @@
         , ("M-z m"       , addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
         , ("M-z w"       , addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
         , ("M-z p"       , addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
-        ]
+        ] ^++^
+
+        subKeys "Prompts"
+        [ ("M3-m", addName "Man-page Prompt" $ manPrompt myPromptTheme)] ^++^
+
+        subKeys "Searchengines"
+        [ ("M3-s " ++ k, addName "Search Engines"  $ S.promptSearch myPromptTheme f) | (k,f) <- searchList]
 
   #+end_src
 
@@ -442,6 +523,50 @@
     myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
 
   #+end_src
+
+  Theme prompts:
+
+  #+begin_src haskell -n
+    myPromptTheme :: XPConfig
+    myPromptTheme = def
+        { font                  = myFont
+        , bgColor               = base03
+        , fgColor               = active
+        , fgHLight              = base03
+        , bgHLight              = active
+        , borderColor           = base03
+        , promptBorderWidth     = 0
+        , height                = prompt
+        , promptKeymap          = emacsLikeXPKeymap
+        , position              = Top
+        -- , position            = CenteredAt { xpCenterY = 0.3, xpWidth = 0.3 }
+        , historySize           = 256
+        , historyFilter         = id
+        , defaultText           = []
+        -- , autoComplete        = Just 100000  -- set Just 100000 for .1 sec
+        , showCompletionOnTab   = False
+        -- , complCaseSensitivity  = ComplCaseSensitive False -- newer version :-(!
+        , searchPredicate       = fuzzyMatch   --
+        , sorter                = fuzzySort
+        , defaultPrompter       = id $ map toUpper  -- change prompt to UPPER
+        , alwaysHighlight       = True
+        , maxComplRows          = Just 15 -- Nothing -- Nothing is unlimited
+        }
+
+    warmPromptTheme = myPromptTheme
+        { bgColor               = yellow
+        , fgColor               = base03
+        , position              = Top
+        }
+
+    hotPromptTheme = myPromptTheme
+        { bgColor               = red
+        , fgColor               = base3
+        , position              = Top
+        }
+
+  #+end_src
+
 * src/MyBar.hs
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
@@ -633,7 +758,7 @@ isZoomNotification = className =? "zoom" <&&> title =? "zoom"
 
    and click on the client you're interested in.
 
-   *Update:* use [[*Xprop wrapper - xmonprop][xmonprop]]
+   *Update:* use [[*Xprop wrapper - xmonpropS][Xprop wrapper - xmonpropS]]
 
    To match on the WM_NAME, you can use 'title' in the same way that
    'className' and 'resource' are used below.
@@ -646,20 +771,26 @@ isZoomNotification = className =? "zoom" <&&> title =? "zoom"
   #+begin_src haskell -n
 manageSpecific :: ManageHook
 manageSpecific = composeAll . concat $
-    [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
-    , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
+    [ [ resource   =? c                     --> largeFloat | c <- floatApps ]
+
+    , [ resource   =? "gsimplecal"          --> doFloatAt' (1554/1920) (30/1040) ]
+    -- , [ className  =? c                     --> doShift ( myWorkspaces !! 0 )| c <- myBrowsers ] TODO IRC
+
+    , [ role       =? "gimp-file-open"      --> doRectFloat (W.RationalRect 0.3 0.3 0.9 0.9) ]
+    , [ className  =? "Gimp"                --> doCenterFloat]
+
     -- , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
-    -- , [ className  =? "zoom" <&&> titleContains z --> doFloatAt' (100/1920) (30/1040) | z <- ["Zoom - Free Account"] ]
-    -- , [ resource   =? "zoom" <&&> titleContains z  --> doRectFloat (W.RationalRect (1/1920)(30/1040)(1/3)(9/10)) | z <- ["Zoom - Free Account"] ]
-    -- , [ resource   =? "gsimplecal"                --> customFloating $ W.RationalRect 0.3 0.3 0.3 0.3 ]
-    -- , [ resource   =? "gsimplecal"                --> doFloatAt' (1554/1920) (30/1040) ]
     , [ isZoomNotification                        --> doFloat ]
+
     , [ className  =? "Chromium" <&&> role =? "GtkFileChooserDialog" --> largeFloat]
     , [ (title     =? "emacs-capture" )     --> smallFloat ]
+
+    , [ (className =? "obs" <&&> title =? "Scripts" ) --> largeFloat ]
+    , [ (className =? "obs" <&&> isDialog ) --> largeFloat ]
     ]
     where
-        myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
-        myFloatTitles  = ["Whisker Menu"]
+        floatApps  = ["pavucontrol", "myMusic", "xmessage", "myFloat"]
+        obsFloats  = [ "Scripts"]
         myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
         role = stringProperty "WM_WINDOW_ROLE"
         doMaster = doF W.shiftMaster --append this to all floats so new windows always go on top, regardless of the current focus
@@ -707,7 +838,7 @@ zoomFloat = doFloatDep move
 
   #+end_src
 
-* src/myCheatsheet
+* src/MyCheatsheet
   :PROPERTIES:
   :header-args:  :tangle "~/.config/xmonad/src/MyCheatsheet.hs"
   :END:
@@ -840,7 +971,7 @@ zoomFloat = doFloatDep move
                 -e $eventActions
 
   #+end_src
-* src/myScratchpads
+* src/MyScratchpads
   :PROPERTIES:
   :header-args:  :tangle "~/.config/xmonad/src/MyScratchpads.hs"
   :END:
@@ -911,7 +1042,6 @@ zoomFloat = doFloatDep move
                      t = 0.95 -h
                      l = 0.95 -w
   #+end_src
-
 * External scripts
 ** (Xmonad) pre-startup script
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
