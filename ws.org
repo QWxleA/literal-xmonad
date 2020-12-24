@@ -248,9 +248,17 @@
 
   #+end_src
 
-* src/MyKeys.hs
+* src/MyKeys.hs [0/2]
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/MyKeys.hs"
+  :END:
 
-  #+begin_src haskell :tangle "~/.config/xmonad/src/MyKeys.hs"
+  - [ ] [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-ShowText.html][XMonad.Actions.ShowText]] -- ShowText displays text for sometime on the screen.
+  - [ ] Next we'll be adding [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] description
+
+  Modules:
+
+  #+begin_src haskell -n
     module MyKeys
     (myKeys,myCheatsheetKey)
     where
@@ -267,15 +275,27 @@
     -- Which programs to use as defaults
     import Options
 
+  #+end_src
+
+  Help functions:
+
+  #+begin_src haskell -n
     -- Convert multiword strings to arguments (concatenate with delimiters)
     -- This makes sure my shell scripts correctly interpret their arguments
     args :: String -> [String] -> String
     args command arguments = command ++ " " ++ unwords (map show arguments)
 
-    -- M = M1 is Super, which I have also set to space when held down TODO
-    -- H is Hyper, which I have set to the menu key
-    -- C-Esc is Super tapped on its own
+  #+end_src
 
+  Modifiers:
+
+  - M = M1 is Super, which I have also set to space when held down TODO
+  - H is Hyper, which I have set to the menu key
+  - C-Esc is Super tapped on its own
+
+  =myKeys= contains all the key bindings, also pre-define longer commands:
+
+  #+begin_src haskell -n
     myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
     myKeys conf = let
 
@@ -299,6 +319,9 @@
 
         in
 
+  #+end_src
+
+  #+begin_src haskell -n
         subKeys "Core"
         [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ io exitSuccess)
         , ("M-q",                     addName "Recompile & restart"    $ spawn myBuildScript)
