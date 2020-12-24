@@ -93,7 +93,6 @@
 
    #+end_src
 
-
 * app/Main.hs
   :PROPERTIES:
   :header-args:  :tangle "~/.config/xmonad/app/Main.hs"
@@ -321,6 +320,8 @@
 
   #+end_src
 
+  Core Xmonad bindings:
+
   #+begin_src haskell -n
         subKeys "Core"
         [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ io exitSuccess)
@@ -329,6 +330,11 @@
         , ("M-S-c",                   addName "Close window"           $ kill)
         ] ^++^
 
+  #+end_src
+
+  Window manager bindings, for these I use =Super=:
+
+  #+begin_src haskell -n
         subKeys "Screens" (
         [("M-"++key,                  addName ("Focus screen "++show sc)   $ viewScreen sc)
             | (key,sc) <- zip ["w","e","r"] [0..]
@@ -373,6 +379,13 @@
         , ("M-t",                     addName "Unfloat"                $ unFloat)
         ] ^++^
 
+  #+end_src
+
+  Application bindings, these are (mostly) using the =Hyper key= (menu):
+
+  Note: =M-S-<Return>= is a fallback, I broke my /menu/ binding a couple of times.
+
+  #+begin_src haskell -n
         subKeys "Applications"
         [ ("M-S-<Return>",            addName "Terminal emulator"      $ spawn myTerminal)
         , ("M3-<Return>",             addName "Terminal emulator"      $ spawn myTerminal)
@@ -405,74 +418,90 @@
         , ("<Print>",                 addName "Take screenshot"        $ spawn myPrintScreen)
         ]
 
-    -- Keybinding to display the keybinding cheatsheet
+  #+end_src
+
+  Keybinding to display the keybinding cheatsheet
+
+  #+begin_src haskell -n
     myCheatsheetKey :: (KeyMask, KeySym)
     myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
 
   #+end_src
+* src/MyBar.hs
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
+  :END:
 
-* src/MyBar
+  Module declaration:
 
-  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyBar.hs"
-module MyBar
-(spawnBarWithHandle, myBarAutostart, myLogHook)
-where
+  #+begin_src haskell -n
+    module MyBar
+    (spawnBarWithHandle, myBarAutostart, myLogHook)
+    where
 
-import System.IO
-import XMonad
-import XMonad.Hooks.DynamicLog
-import XMonad.Util.Run (spawnPipe)
-import Options
+    import System.IO
+    import XMonad
+    import XMonad.Hooks.DynamicLog
+    import XMonad.Util.Run (spawnPipe)
+    import Options
 
--- Shell commands
+  #+end_src
 
--- Spawn the bar, returning its handle
-spawnBarWithHandle :: IO (Handle)
-spawnBarWithHandle
-    | myBar == XMobar = spawnPipe $ "xmobar " ++ myXMobarConf
-    | otherwise       = spawnPipe ""
+  Spawn the bar:
 
--- Other processes that need to run, depending on the bar
-myBarAutostart :: String
-myBarAutostart
-    | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
-    | myBar == Tint2    = "tint2 -c "             ++ myTint2Conf
-    | myBar == Taffybar = "taffybar"
+  #+begin_src haskell -n
+    -- Spawn the bar, returning its handle
+    spawnBarWithHandle :: IO (Handle)
+    spawnBarWithHandle
+        | myBar == XMobar = spawnPipe $ "xmobar " ++ myXMobarConf
+        | otherwise       = spawnPipe ""
 
--- Symbols for displaying workspaces in xmobar
--- Must be functions, as it expects a different symbol for each
-myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
-myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
-myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
+    -- Other processes that need to run, depending on the bar
+    myBarAutostart :: String
+    myBarAutostart
+        | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
+        | myBar == Tint2    = "tint2 -c "             ++ myTint2Conf
+        | myBar == Taffybar = "taffybar"
 
--- Data to be sent to the bar
--- barProc points to the status bar's process handle
-myXMobarLogHook :: Handle -> X ()
--- dynamicLogWithPP allows us to format the output
--- xmobarPP gives us some defaults
-myXMobarLogHook barProc = dynamicLogWithPP xmobarPP
-        -- Write to bar instead of stdout
-        { ppOutput          = hPutStrLn barProc
-        -- How to order the different sections of the log
-        , ppOrder           = \(workspace:layout:title:extras)
-                            -> [workspace,layout]
-        -- Separator between different sections of the log
-        , ppSep             = "  "
-        -- Format the workspace information
-        , ppCurrent         = xmobarColor "white" "" . myCurrentWsSymbol
-        , ppHidden          = xmobarColor "white" "" . myHiddenWsSymbol
-        , ppHiddenNoWindows = xmobarColor "white" "" . myEmptyWsSymbol
-        }
+    -- Symbols for displaying workspaces in xmobar
+    -- Must be functions, as it expects a different symbol for each
+    myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
+    myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
+    myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
 
-myLogHook :: Handle -> X ()
-myLogHook barProc
-    | myBar == XMobar = myXMobarLogHook barProc
-    | otherwise       = def  -- Outputting an unread log can crash XMonad
+    -- Data to be sent to the bar
+    -- barProc points to the status bar's process handle
+    myXMobarLogHook :: Handle -> X ()
+    -- dynamicLogWithPP allows us to format the output
+    -- xmobarPP gives us some defaults
+    myXMobarLogHook barProc = dynamicLogWithPP xmobarPP
+            -- Write to bar instead of stdout
+            { ppOutput          = hPutStrLn barProc
+            -- How to order the different sections of the log
+            , ppOrder           = \(workspace:layout:title:extras)
+                                -> [workspace,layout]
+            -- Separator between different sections of the log
+            , ppSep             = "  "
+            -- Format the workspace information
+            , ppCurrent         = xmobarColor "white" "" . myCurrentWsSymbol
+            , ppHidden          = xmobarColor "white" "" . myHiddenWsSymbol
+            , ppHiddenNoWindows = xmobarColor "white" "" . myEmptyWsSymbol
+            }
+
+    myLogHook :: Handle -> X ()
+    myLogHook barProc
+        | myBar == XMobar = myXMobarLogHook barProc
+        | otherwise       = def  -- Outputting an unread log can crash XMonad
 
   #+end_src
 * src/MyLayoutHook.hs
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
+  :END:
 
-  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
+  Module declaration:
+
+  #+begin_src haskell -n
     {-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
 
     module MyLayoutHook
@@ -491,6 +520,12 @@ myLogHook barProc
     import XMonad.Layout.ThreeColumns
 
     import Options
+
+  #+end_src
+
+  Layouts:
+
+  #+begin_src haskell -n
 
     -- Gaps around and between windows
     -- Changes only seem to apply if I log out then in again
@@ -533,44 +568,86 @@ myLogHook barProc
   #+end_src
 
 * src/MyManageHook.hs
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/MyManageHook.hs"
+  :END:
 
-  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyManageHook.hs"
-module MyManageHook
-(myManageHook)
-where
+  Module declaration:
 
-import Data.List (isInfixOf)
-import XMonad
-import XMonad.Hooks.ManageDocks
+  #+begin_src haskell -n
+    module MyManageHook (myManageHook) where
 
-titleContains :: String -> Query Bool
-titleContains string = fmap (isInfixOf string) title
-
-isZoomNotification :: Query Bool
-isZoomNotification = className =? "zoom" <&&> title =? "zoom"
-
--- To find a window class or title, run xprop in a terminal, then click on it
-manageSpecific :: ManageHook
-manageSpecific = composeAll . concat $
-    [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
-    , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
-    , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
-    , [ isZoomNotification                        --> doFloat ]
-    ]
-    where
-        myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
-        myFloatTitles  = ["Whisker Menu"]
-        myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
-
-myManageHook :: ManageHook
-myManageHook = manageSpecific <+> manageDocks
+    import Data.List (isInfixOf)
+    import XMonad
+    import XMonad.Hooks.ManageDocks
 
   #+end_src
-* src/myCheatsheet [0/1]
 
-  - [ ] Source: ?? quark
+  Help functions:
 
-  #+begin_src haskell :tangle "~/.config/xmonad/src/MyCheatsheet.hs"
+  #+begin_src haskell -n
+    titleContains :: String -> Query Bool
+    titleContains string = fmap (isInfixOf string) title
+
+    isZoomNotification :: Query Bool
+    isZoomNotification = className =? "zoom" <&&> title =? "zoom"
+
+  #+end_src
+
+
+   **Window rules: Manage Hook**
+
+   Execute arbitrary actions and WindowSet manipulations when managing
+   a new window. You can use this to, for example, always float a
+   particular program, or have a client always appear on a particular
+   workspace.
+
+   To find the property name associated with a program, use
+
+   #+begin_example
+   xprop | grep WM_CLASS
+   #+end_example
+
+   and click on the client you're interested in.
+
+   *Update:* use [[*Xprop wrapper - xmonprop][xmonprop]]
+
+   To match on the WM_NAME, you can use 'title' in the same way that
+   'className' and 'resource' are used below.
+
+   The class name of an application corresponds to the first
+   value of WM_CLASS (“Pidgin”).
+   The resource corresponds to the second value of WM_CLASS (also “Pidgin”).
+   The title corresponds to WM_NAME (“Buddy List”).
+
+  #+begin_src haskell
+    manageSpecific :: ManageHook
+    manageSpecific = composeAll . concat $
+        [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
+        , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
+        , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
+        , [ isZoomNotification                        --> doFloat ]
+        ]
+        where
+            myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
+            myFloatTitles  = ["Whisker Menu"]
+            myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
+
+    myManageHook :: ManageHook
+    myManageHook = manageSpecific <+> manageDocks
+
+  #+end_src
+
+* src/myCheatsheet
+  :PROPERTIES:
+  :header-args:  :tangle "~/.config/xmonad/src/MyCheatsheet.hs"
+  :END:
+
+  - Source: [[https://github.com/quarkQuark/dotfiles/tree/49ab839c7c8ad33c728a1238a2af9ce860abe5dc/.config/xmonad][github.com/quarkQuark/dotfiles]]
+
+  Module declaration:
+
+  #+begin_src haskell -n
     module MyCheatsheet
     (myCheatsheet)
     where
@@ -582,6 +659,11 @@ myManageHook = manageSpecific <+> manageDocks
     import XMonad.Util.NamedActions
     import XMonad.Util.Run
 
+  #+end_src
+
+  Pipe key bindings to dzen2:
+
+  #+begin_src haskell -n
     -- Number of colomns with with which to display the cheatsheet
     myCheatsheetCols :: Int
     myCheatsheetCols = 3
@@ -589,7 +671,7 @@ myManageHook = manageSpecific <+> manageDocks
     -- Format the keybindings so they can be sent to the display
     formatList :: [String] -> String
     formatList list = columns "SeparatorPlaceholder" -- Normalise column widths -> Table
-                    $ map unlines -- Connect the sublists with line breals -> [column1,column2,...]
+                    $ map unlines -- Connect the sublists with line breaks -> [column1,column2,...]
                     $ chunksOf (myCheatsheetRows (list))
                     $ list -- The list to be formatted
 
@@ -599,7 +681,7 @@ myManageHook = manageSpecific <+> manageDocks
     -- How to display the cheatsheet (adapted from Ethan Schoonover's config)
     myCheatsheet :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
     myCheatsheet myKeyList = addName "Show Keybindings" $ io $ do
-        handle <- spawnPipe "dzen2-display-cheatsheet"
+        handle <- spawnPipe "dzen2-display-cheatsheetS"
         hPutStrLn handle "TitlePlaceholder\n" -- Replaced in the script
         hPutStrLn handle $ formatList (showKm myKeyList)
         hClose handle
@@ -607,7 +689,9 @@ myManageHook = manageSpecific <+> manageDocks
 
   #+end_src
 
-  #+begin_src shell :tangle-mode (identity #o555) :tangle "~/.local/bin/dzen2-display-cheatsheet"
+  Script: =dzen2-display-cheatsheetS=
+
+  #+begin_src shell :tangle-mode (identity #o555) :tangle "~/.local/bin/dzen2-display-cheatsheetS"
     #!/usr/bin/sh
 
     font="Mono-10"
@@ -723,6 +807,21 @@ myManageHook = manageSpecific <+> manageDocks
       echo "<fc=$color><fn=1>$icon</fn> ${name}</fc>"
     #+end_src
 
+
+*** Xprop wrapper - xmonprop
+
+    Source: [[https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_need_to_find_the_class_title_or_some_other_X_property_of_my_program][Haskell wiki]]
+
+     #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/xmonProp"
+
+       exec xprop -notype \
+        -f WM_NAME        8s ':\n  title =\? $0\n' \
+        -f WM_CLASS       8s ':\n  appName =\? $0\n  className =\? $1\n' \
+        -f WM_WINDOW_ROLE 8s ':\n  stringProperty "WM_WINDOW_ROLE" =\? $0\n' \
+        WM_NAME WM_CLASS WM_WINDOW_ROLE \
+        ${1+"$@"}
+
+    #+end_src
 ** Startup
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
 
@@ -927,3 +1026,10 @@ myManageHook = manageSpecific <+> manageDocks
            }
 
    #+end_src
+
+* COMMENT Document settings
+  This makes the identation stay the same over multiple blocks.
+
+# Local Variables:
+# org-src-preserve-indentation: t
+# End:
