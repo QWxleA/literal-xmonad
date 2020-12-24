@@ -1,0 +1,893 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil
+#+options: f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+options: timestamp:t title:t toc:t todo:t |:t
+#+title: ws
+#+date: <2020-12-24 Thu>
+#+PROPERTY: header-args  :mkdirp yes
+
+* Build Xmonad
+
+  - stack init  :
+  - stack build :
+  - stck install:
+
+  #+begin_src sh :tangle-mode (identity #o555) :tangle "~/.config/xmonad/build" :mkdirp yes
+    #!/bin/sh
+    #
+    # As of 0.13, xmonad --recompile will look for a custom build script.
+
+    set -e
+    ICON="~/Pictures/Icons/Xmonad-logo.svg.png"
+
+    cd ~/.config/xmonad
+    notify-send "Xmonad" "Build started ($1)" -i "$ICON"
+    #stack build || stack init
+    stack install
+    xmonad --restart
+  #+end_src
+
+  Fitspec is needed for the cheatsheet.
+
+  #+begin_src yaml :tangle "~/.config/xmonad/package.yaml"
+    name: myXmonad
+
+    dependencies:
+        - base
+        - xmonad
+        - xmonad-contrib
+        - split
+        - fitspec
+
+    library:
+        source-dirs: src
+
+    executables:
+        xmonad:
+            source-dirs:  app
+            main:         Main.hs
+            dependencies: myXmonad
+            ghc-options:
+                - -threaded
+                - -rtsopts
+                - -with-rtsopts=-N
+                - -Wall
+  #+end_src
+** COMMENT Build scripts old
+
+   #+begin_src shell
+ #!/bin/env sh
+
+ EXEC_PATH="$1"
+
+ cd .config/xmonad
+ stack install
+ ln -sf ~/.local/bin/xmonad $EXEC_PATH
+ xmonad --restart
+
+   #+end_src
+
+   #+begin_src yaml
+ name: myXmonad
+
+ dependencies:
+     - base
+     - xmonad
+     - xmonad-contrib
+     - split
+     - fitspec
+
+ library:
+     source-dirs: src
+
+ executables:
+     xmonad:
+         source-dirs:  app
+         main:         Main.hs
+         dependencies: myXmonad
+         ghc-options:
+             - -threaded
+             - -rtsopts
+             - -with-rtsopts=-N
+             - -Wall
+
+   #+end_src
+
+* Header
+
+  #+begin_src haskell +n :tangle "~/.config/xmonad/app/Main.hs"
+    ---------------------------------------------------------------------------
+    --                                                                       --
+    --     _|      _|  _|      _|                                      _|    --
+    --       _|  _|    _|_|  _|_|    _|_|    _|_|_|      _|_|_|    _|_|_|    --
+    --         _|      _|  _|  _|  _|    _|  _|    _|  _|    _|  _|    _|    --
+    --       _|  _|    _|      _|  _|    _|  _|    _|  _|    _|  _|    _|    --
+    --     _|      _|  _|      _|    _|_|    _|    _|    _|_|_|    _|_|_|    --
+    --                                                                       --
+    ---------------------------------------------------------------------------
+    -- Alex <qwxlea@gmail.com>                                               --
+    -- https://github.com/qwxlea                                             --
+    ---------------------------------------------------------------------------
+    -- current as of XMonad 0.15
+    ---------------------------------------------------------------------------
+    module Main where
+  #+end_src
+
+* MyKeys
+
+  #+begin_src haskell :tangle "~/.config/xmonad/src/MyKeys.hs"
+    module MyKeys
+    (myKeys,myCheatsheetKey)
+    where
+
+    import System.Exit (exitSuccess)
+    import XMonad
+    import XMonad.Layout.MultiToggle
+    import XMonad.Layout.MultiToggle.Instances
+    import XMonad.Layout.ResizableTile
+    import XMonad.Util.EZConfig     -- Simpler keybinding syntax
+    import XMonad.Util.NamedActions -- Allows labelling of keybindings
+    import qualified XMonad.StackSet as W
+
+    -- Which programs to use as defaults
+    import Options
+
+    -- Convert multiword strings to arguments (concatenate with delimiters)
+    -- This makes sure my shell scripts correctly interpret their arguments
+    args :: String -> [String] -> String
+    args command arguments = command ++ " " ++ unwords (map show arguments)
+
+    -- M = M1 is Super, which I have also set to space when held down TODO
+    -- H is Hyper, which I have set to the menu key
+    -- C-Esc is Super tapped on its own
+
+    myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
+    myKeys conf = let
+
+        subKeys name list = subtitle name : mkNamedKeymap conf list
+
+        -- Abbreviations for certain actions
+        menuEditScript         = spawn $ args "menu-edit-script" [myMenu,myEditor]
+        menuEditConfig         = spawn $ args "menu-edit-config" [myMenu,myEditor]
+        menuChangeColourscheme = spawn $ args "menu-change-colourscheme" [myMenu]
+        menuReadPdf            = spawn $ args "menu-read-pdf" [myMenu,myPdfReader]
+
+        viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
+        shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
+        unFloat               = withFocused $ windows . W.sink
+
+        volumeAdjust "toggle" = spawn "adjust-volume toggle"
+        volumeAdjust value    = spawn $ args "adjust-volume" $ words value
+
+        brightnessAdjust perc = spawn
+            $ "xbacklight " ++ perc ++ " && notify-send \"Brightness `xbacklight -get`%\""
+
+        in
+
+        subKeys "Core"
+        [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ io exitSuccess)
+        , ("M-q",                     addName "Recompile & restart"    $ spawn myBuildScript)
+        , ("C-<Escape>",              addName "Application launcher"   $ spawn "appmenu")
+        , ("M-S-c",                   addName "Close window"           $ kill)
+        ] ^++^
+
+        subKeys "Screens" (
+        [("M-"++key,                  addName ("Focus screen "++show sc)   $ viewScreen sc)
+            | (key,sc) <- zip ["w","e","r"] [0..]
+        ] ^++^
+        [("M-S-"++key,                addName ("Send to screen "++show sc) $ shiftScreen sc)
+            | (key,sc) <- zip ["w","e","r"] [0..]
+        ]) ^++^
+
+        subKeys "Workspaces" (
+        --[ ("M-u",                     addName "View next"              $ )
+        --, ("M-i,",                    addName "View previous"          $ )
+        --, ("M-S-u",                   addName "Send to next"           $ )
+        --, ("M-S-i",                   addName "Send to previous"       $ )
+        --] ^++^
+        [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
+            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        ] ^++^
+        [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
+            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        ]) ^++^
+
+        subKeys "Layouts"
+        [ ("M-h",                     addName "Shrink master"          $ sendMessage Shrink)
+        , ("M-l",                     addName "Expand master"          $ sendMessage Expand)
+        , ("M-i",                     addName "Shrink slave"           $ sendMessage MirrorExpand)
+        , ("M-u",                     addName "Expand slave"           $ sendMessage MirrorShrink)
+        , ("M-,",                     addName "Inc master windows"     $ sendMessage $ IncMasterN 1)
+        , ("M-.",                     addName "Dec master windows"     $ sendMessage $ IncMasterN (-1))
+        , ("M-<Space>",              addName "Next layout"            $ sendMessage NextLayout)
+        , ("M-f",                     addName "Toggle fullscreen"      $ sendMessage $ Toggle NBFULL)
+        ] ^++^
+
+        subKeys "Windows"
+        [ ("M-<Tab>",                 addName "Focus next"             $ windows W.focusDown)
+        , ("M-S-<Tab>",               addName "Focus previous"         $ windows W.focusUp)
+        , ("M-j",                     addName "Focus next"             $ windows W.focusDown)
+        , ("M-k",                     addName "Focus previous"         $ windows W.focusUp)
+        , ("M-m",                     addName "Focus master"           $ windows W.focusMaster)
+        , ("M-S-j",                   addName "Swap next"              $ windows W.swapDown)
+        , ("M-S-k",                   addName "Swap previous"          $ windows W.swapUp)
+        , ("M-<Return>",              addName "Swap master"            $ windows W.swapMaster)
+        , ("M-t",                     addName "Unfloat"                $ unFloat)
+        ] ^++^
+
+        subKeys "Applications"
+        [ ("M-S-<Return>",            addName "Terminal emulator"      $ spawn myTerminal)
+        , ("M3-<Return>",             addName "Terminal emulator"      $ spawn myTerminal)
+        , ("M3-e",                    addName "Text editor"            $ spawn myEditor)
+        , ("M3-w",                    addName "Web browser (minimal)"  $ spawn myBrowser)
+        , ("M3-S-w",                  addName "Firefox"                $ spawn "firefox")
+        , ("M3-f",                    addName "Terminal file manager"  $ spawn myFileManager)
+        , ("M3-S-f",                  addName "Graphical file manager" $ spawn myGuiFileManager)
+        , ("M3-z",                    addName "Zoom"                   $ spawn "zoom")
+        ] ^++^
+
+        subKeys "My Scripts"
+        [ ("M-p M-p",                 addName "Edit scripts"           $ menuEditScript)
+        , ("M-p M-e",                 addName "Edit configs"           $ menuEditConfig)
+        , ("M-p M-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
+        , ("M-p M-z",                 addName "Read PDF file"          $ menuReadPdf)
+        ] ^++^
+
+        subKeys "Multimedia Keys"
+        [ ("<XF86AudioMute>",         addName "Toggle mute"            $ volumeAdjust "toggle")
+        , ("<XF86AudioLowerVolume>",  addName "Decrease volume"        $ volumeAdjust "- 5%")
+        , ("<XF86AudioRaiseVolume>",  addName "Increase volume"        $ volumeAdjust "+ 5%")
+        , ("<XF86MonBrightnessDown>", addName "Decrease brightness"    $ brightnessAdjust "-dec 10")
+        , ("<XF86MonBrightnessUp>",   addName "Increase brightness"    $ brightnessAdjust "-inc 10")
+        , ("C-<F1>",                  addName "Toggle mute"            $ volumeAdjust "toggle")
+        , ("C-<F2>",                  addName "Decrease volume"        $ volumeAdjust "- 5%")
+        , ("C-<F3>",                  addName "Increase volume"        $ volumeAdjust "+ 5%")
+        , ("C-<F11>",                 addName "Decrease brightness"    $ brightnessAdjust "-dec 10")
+        , ("C-<F12>",                 addName "Increase brightness"    $ brightnessAdjust "-inc 10")
+        , ("<Print>",                 addName "Take screenshot"        $ spawn myPrintScreen)
+        ]
+
+    -- Keybinding to display the keybinding cheatsheet
+    myCheatsheetKey :: (KeyMask, KeySym)
+    myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
+
+  #+end_src
+
+* Main
+
+  #+begin_src haskell +n :tangle "~/.config/xmonad/app/Main.hs"
+    import XMonad                             -- standard xmonad library
+    import XMonad.Config.Desktop              -- default desktopConfig
+    import XMonad.Hooks.EwmhDesktops          -- Fixes the automatic fullscreening of applications
+    import XMonad.Util.NamedActions (addDescrKeys')
+    import XMonad.Util.SpawnOnce (spawnOnce)  -- For running autostart only once (on login)
+
+    import Options
+    import MyKeys
+    import MyCheatsheet
+    import MyBar
+    import MyLayoutHook
+    import MyManageHook
+
+    -- I want to figure out how window decorations work, but my Haskell is not yet good enough
+    --import XMonad.Layout.Decoration
+    --import XMonad.Util.Types
+    --import SideDecoration
+
+    --mySideDecorationTheme :: Theme
+    --mySideDecorationTheme = def
+    --mySideDecorate :: Eq a => l a -> ModifiedLayout (Decoration SideDecoration DefaultShrinker) l a
+    --mySideDecorate = decoration shrinkText mySideDecorationTheme (SideDecoration L)
+
+    -- My workspaces are currently just numbers
+    myWorkspaces :: [String]
+    myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
+
+    main :: IO ()
+    main = do
+        barProc <- spawnBarWithHandle  -- Start myBar and return a handle
+        spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
+
+        -- Applies this config file over the default config for desktop use
+        xmonad
+            -- Increased compliance with the Extended Window Manager Hints standard
+            $ ewmh
+            -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
+            $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
+            $ myConfig barProc
+
+    myConfig barProc = desktopConfig
+            { modMask            = myModMask
+            , terminal           = myTerminal
+            , borderWidth        = myBorderWidth
+            , normalBorderColor  = myNormalBorderColour
+            , focusedBorderColor = myFocusedBorderColour
+            , manageHook         = myManageHook
+            , layoutHook         = myLayoutHook
+            , logHook            = myLogHook barProc
+            , workspaces         = myWorkspaces
+            , startupHook        = do spawnOnce myBarAutostart
+                                      spawnOnce myAutostart
+            }
+
+  #+end_src
+
+* Options
+
+  #+begin_src haskell  :tangle "~/.config/xmonad/src/Options.hs"
+    module Options where
+
+    import XMonad
+
+    -- The modifier key to be used for most keybindings
+    -- I have it set to super (the Windows key)
+    myModMask :: KeyMask
+    myModMask  = mod4Mask
+
+    --------------------------------------------------------------------------------
+    -- APPLICATIONS
+
+    myTerminal       = "alacritty"
+    myEditor         = myTerminal ++ " -e nvim "
+    myBrowser        = "qutebrowser"
+    myFileManager    = myTerminal ++ " -e ranger "
+    myGuiFileManager = "pcmanfm"
+    myPdfReader      = "zathura"
+    myPrintScreen    = "spectacle"
+
+    data Bar = Taffybar | XMobar | Tint2 deriving (Eq)
+    myBar :: Bar
+    myBar = XMobar
+
+    myMenu :: String
+    myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
+
+    --------------------------------------------------------------------------------
+    -- FILEPATHS
+
+    myConfigDir       = "~/.config/xmonad/src/"       -- XMonad-related config
+    myBuildScript     = "~/.config/xmonad/build"      -- Script to recompile and restart xmonad
+    myAutostart       = "~/.config/xmonad/src/autostart.sh" -- Script to run on login
+    myXMobarConf      = "~/.config/xmobar/xmobarrc.hs"
+    myStalonetrayConf = "~/.config/stalonetray/stalonetrayrc"
+    myTint2Conf       = "~/.config/tint2/xmonad.tint2rc"
+
+    --------------------------------------------------------------------------------
+    -- THEME
+
+    myFont = "xft:Ubuntu Nerd Font:size=10"
+    rofiTheme theme = "~/.config/rofi/themes/" ++ theme ++ ".rasi" -- Rofi theme directory
+
+    myBorderWidth :: Dimension
+    myBorderWidth = 2
+
+    myNormalBorderColour, myFocusedBorderColour :: String
+    myNormalBorderColour = "#111111"
+    myFocusedBorderColour = "#268bd2"
+
+    -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
+    myTabActiveColour      = "#46D9FF"
+    myTabInactiveColour       = "#313846"
+    myTabActiveBorderColour   = "#46D9FF"
+    myTabInactiveBorderColour = "#282C34"
+    myTabActiveTextColour     = "#282C34"
+    myTabInactiveTextColour   = "#D0D0D0"
+
+  #+end_src
+
+* MyBar
+
+  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyBar.hs"
+module MyBar
+(spawnBarWithHandle, myBarAutostart, myLogHook)
+where
+
+import System.IO
+import XMonad
+import XMonad.Hooks.DynamicLog
+import XMonad.Util.Run (spawnPipe)
+import Options
+
+-- Shell commands
+
+-- Spawn the bar, returning its handle
+spawnBarWithHandle :: IO (Handle)
+spawnBarWithHandle
+    | myBar == XMobar = spawnPipe $ "xmobar " ++ myXMobarConf
+    | otherwise       = spawnPipe ""
+
+-- Other processes that need to run, depending on the bar
+myBarAutostart :: String
+myBarAutostart
+    | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
+    | myBar == Tint2    = "tint2 -c "             ++ myTint2Conf
+    | myBar == Taffybar = "taffybar"
+
+-- Symbols for displaying workspaces in xmobar
+-- Must be functions, as it expects a different symbol for each
+myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
+myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
+myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
+
+-- Data to be sent to the bar
+-- barProc points to the status bar's process handle
+myXMobarLogHook :: Handle -> X ()
+-- dynamicLogWithPP allows us to format the output
+-- xmobarPP gives us some defaults
+myXMobarLogHook barProc = dynamicLogWithPP xmobarPP
+        -- Write to bar instead of stdout
+        { ppOutput          = hPutStrLn barProc
+        -- How to order the different sections of the log
+        , ppOrder           = \(workspace:layout:title:extras)
+                            -> [workspace,layout]
+        -- Separator between different sections of the log
+        , ppSep             = "  "
+        -- Format the workspace information
+        , ppCurrent         = xmobarColor "white" "" . myCurrentWsSymbol
+        , ppHidden          = xmobarColor "white" "" . myHiddenWsSymbol
+        , ppHiddenNoWindows = xmobarColor "white" "" . myEmptyWsSymbol
+        }
+
+myLogHook :: Handle -> X ()
+myLogHook barProc
+    | myBar == XMobar = myXMobarLogHook barProc
+    | otherwise       = def  -- Outputting an unread log can crash XMonad
+
+  #+end_src
+* MyLayoutHook
+
+  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
+    {-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
+
+    module MyLayoutHook
+    (myLayoutHook)
+    where
+
+    import XMonad.Hooks.ManageDocks (avoidStruts)
+    import XMonad.Layout
+    import XMonad.Layout.MultiToggle
+    import XMonad.Layout.MultiToggle.Instances
+    import XMonad.Layout.NoBorders
+    import XMonad.Layout.Renamed
+    import XMonad.Layout.ResizableTile
+    import XMonad.Layout.Spacing
+    import XMonad.Layout.Tabbed
+    import XMonad.Layout.ThreeColumns
+
+    import Options
+
+    -- Gaps around and between windows
+    -- Changes only seem to apply if I log out then in again
+    -- Dimensions are given as (Border top bottom right left)
+    mySpacing = spacingRaw True                -- Only for >1 window
+                           -- The bottom edge seems to look narrower than it is
+                           (Border 0 15 10 10) -- Size of screen edge gaps
+                           True                -- Enable screen edge gaps
+                           (Border 5 5 5 5)    -- Size of window gaps
+                           True                -- Enable window gaps
+
+    myTabConfig = def { fontName            = myFont
+                      , activeColor         = myTabActiveColour
+                      , inactiveColor       = myTabInactiveColour
+                      , activeBorderColor   = myTabActiveBorderColour
+                      , inactiveBorderColor = myTabInactiveBorderColour
+                      , activeTextColor     = myTabActiveTextColour
+                      , inactiveTextColor   = myTabInactiveTextColour
+                      }
+
+    tall  = renamed [Replace "Tall"]
+          $ mySpacing
+          $ avoidStruts
+          $ ResizableTall 1 (3/100) (1/2) []
+
+    three = renamed [Replace "Three"]
+          $ mySpacing
+          $ avoidStruts
+          $ ThreeColMid 1 (3/100) (1/2)
+
+    tabs  = renamed [Replace "Tabs"]
+          $ avoidStruts
+          $ tabbed shrinkText myTabConfig
+
+    myLayoutHook = smartBorders
+    --           $ mySideDecorate  -- Messes up everything - I don't yet understand why
+                 $ mkToggle (single NBFULL)
+                 $ tall ||| three ||| tabs
+
+  #+end_src
+
+* MyManageHook
+
+  #+begin_src haskell  :tangle "~/.config/xmonad/src/MyManageHook.hs"
+module MyManageHook
+(myManageHook)
+where
+
+import Data.List (isInfixOf)
+import XMonad
+import XMonad.Hooks.ManageDocks
+
+titleContains :: String -> Query Bool
+titleContains string = fmap (isInfixOf string) title
+
+isZoomNotification :: Query Bool
+isZoomNotification = className =? "zoom" <&&> title =? "zoom"
+
+-- To find a window class or title, run xprop in a terminal, then click on it
+manageSpecific :: ManageHook
+manageSpecific = composeAll . concat $
+    [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
+    , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
+    , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
+    , [ isZoomNotification                        --> doFloat ]
+    ]
+    where
+        myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
+        myFloatTitles  = ["Whisker Menu"]
+        myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
+
+myManageHook :: ManageHook
+myManageHook = manageSpecific <+> manageDocks
+
+  #+end_src
+* src/myCheatsheet [0/1]
+
+  - [ ] Source: ?? quark
+
+  #+begin_src haskell :tangle "~/.config/xmonad/src/MyCheatsheet.hs"
+    module MyCheatsheet
+    (myCheatsheet)
+    where
+
+    import Data.List.Split (chunksOf)
+    import System.IO
+    import Test.FitSpec.PrettyPrint (columns) -- Requires the 'fitspec' package
+    import XMonad
+    import XMonad.Util.NamedActions
+    import XMonad.Util.Run
+
+    -- Number of colomns with with which to display the cheatsheet
+    myCheatsheetCols :: Int
+    myCheatsheetCols = 3
+
+    -- Format the keybindings so they can be sent to the display
+    formatList :: [String] -> String
+    formatList list = columns "SeparatorPlaceholder" -- Normalise column widths -> Table
+                    $ map unlines -- Connect the sublists with line breals -> [column1,column2,...]
+                    $ chunksOf (myCheatsheetRows (list))
+                    $ list -- The list to be formatted
+
+            where rowsFromColumns list nCol = 1 + length list `div` nCol
+                  myCheatsheetRows list = rowsFromColumns list myCheatsheetCols
+
+    -- How to display the cheatsheet (adapted from Ethan Schoonover's config)
+    myCheatsheet :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
+    myCheatsheet myKeyList = addName "Show Keybindings" $ io $ do
+        handle <- spawnPipe "dzen2-display-cheatsheet"
+        hPutStrLn handle "TitlePlaceholder\n" -- Replaced in the script
+        hPutStrLn handle $ formatList (showKm myKeyList)
+        hClose handle
+        return ()
+
+  #+end_src
+
+  #+begin_src shell :tangle-mode (identity #o555) :tangle "~/.local/bin/dzen2-display-cheatsheet"
+    #!/usr/bin/sh
+
+    font="Mono-10"
+
+    # Colours
+    background='#000000'
+    titleColour='^fg(#00AAAA)'
+    asideColour='^fg(#666666)'
+    headingColour='^fg(#FFFFFF)'
+    keyColourSuper='^fg(#AAAA00)'
+    keyColourHyper='^fg(#AA88FF)'
+    keyColourMedia='^fg(#FF8888)'
+    descColour='^fg(#AAAAAA)'
+
+    # Patterns to replace
+    keyLinesSuper='\(M4-\|Super\)[^ ]*'
+    keyLinesHyper='M3-[^ ]*'
+    keyLinesMedia='\(Print\|XF86\|C-\)[^ ]*'
+    headings='>>'
+
+    # Replacement Variables
+    super="${keyColourSuper}Super(Windows\/Space)${titleColour}"
+    hyper="${keyColourHyper}Hyper(Caps Lock)${titleColour}"
+    title="${titleColour}XMonad Keybindings (with the $super or $hyper key)"\
+    "${asideColour}        -    Click to close"
+
+    # Screen dimensions, for positioning calculations
+    screenXY=`xdpyinfo | awk '/dimensions:/ { print $2 }'`
+    screenX=${screenXY%x*}
+    screenY=${screenXY#*x}
+
+    # Dimensions
+    lineHeight=24
+    lines=42
+    replaceSeparator="s/SeparatorPlaceholder/    /g"
+    width=1800
+    height=`expr ${lineHeight} \* \( ${lines} + 1 \)`
+
+    # Position
+    xPos=`expr \( ${screenX} - ${width} \) / 2`
+    yPos=`expr \( ${screenY} - ${height} \) / 2`
+
+    # Dzen behaviour
+    eventActions='onstart=uncollapse'\
+    ';button1=exit;button3=exit;key_Escape=exit'\
+    ';button4=scrollup;button5=scrolldown'
+
+    # Replace placeholders
+    replaceTitle="s/TitlePlaceholder/${title}/g"
+    replaceSuperTap="s/C-Escape/Super   /g"
+    replaceShift="s/Shift-\([^ ]*\)/S-\1    /g"
+    replaceSlash="s/slash/\/    /g"
+    replacePlaceholders="${replaceTitle};${replaceM4};${replaceSuperTap}
+    ;${replaceShift};${replaceSlash};${replaceSeparator}"
+
+    # Format colour
+    colourKeyLinesSuper="s/${keyLinesSuper}/${keyColourSuper}&${descColour}/g"
+    colourKeyLinesHyper="s/${keyLinesHyper}/${keyColourHyper}&${descColour}/g"
+    colourKeyLinesMedia="s/${keyLinesMedia}/${keyColourMedia}&${descColour}/g"
+    colourHeadings="s/${headings}/${headingColour}&/g"
+    formatColour="${colourKeyLinesSuper};${colourKeyLinesHyper};${colourKeyLinesMedia};${colourHeadings}"
+
+    # Remove redundancies
+    removeM4="s/M4-\([^ ]*\)/\1   /g"
+    removeM3="s/M3-\([^ ]*\)/\1   /g"
+    screen="s/ S \(.\)/ \1  /g"
+    removeRedundancies="${removeM4};${removeM3};${screen}"
+
+    addMargin="/[^<${title}>]/s/^/  /g"
+
+    sed "${replacePlaceholders};${formatColour};${addMargin};${removeRedundancies}" \
+        | dzen2 -p \
+                -bg $background \
+                -h "$lineHeight" -w "$width" -l "$lines" \
+                -x "$xPos" -y "$yPos" \
+                -fn $font \
+                -e $eventActions
+
+  #+end_src
+* External scripts
+
+** WM scripts
+
+*** Keyboard indicator Mobar
+    #+begin_src  shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKb"
+      stdlayout=us  # standard layout takes "default" color
+      stdname=en-us # arbitrary, descriptive only
+
+      base03=#002b36
+      base02=#073642
+      base01=#586e75
+      base00=#657b83
+      base0=#839496
+      base1=#93a1a1
+      base2=#eee8d5
+      base3=#fdf6e3
+      yellow=#b58900
+      orange=#cb4b16
+      red=#dc322f
+      magenta=#d33682
+      violet=#6c71c4
+      blue=#268bd2
+      cyan=#2aa198
+      green=#859900
+
+      layout="$(~/.local/bin/xkblayout-state print "%s")"
+
+      case $layout in
+          ${stdlayout}) color=$green; icon=" "; name=$stdname ;; # f11c fa-keyboard-o
+          ,*) color=$magenta; icon=" "; name="russian" ;; # f11c fa-keyboard-o
+      esac
+
+      echo "<fc=$color><fn=1>$icon</fn> ${name}</fc>"
+    #+end_src
+
+** Startup
+   Still haven't figured out what's best. Atm I use .xinitrc for most of this.
+
+   #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostart.sh"
+     # Desktop
+     wallpaper
+
+     if [ -z "$(pgrep unclutter)" ] ; then
+         "unclutter --timeout 4 --jitter 10 --ignore-scrolling -b"
+     fi
+
+     if [ -z "$(pgrep dunst)" ] ; then
+         dunst &
+     fi
+
+     if [ -z "$(pgrep picom)" ] ; then
+         picom &
+     fi
+
+     if [ -z "$(pgrep redshift)" ] ; then
+         redshift &
+     fi
+
+     if [ -z "$(pgrep emacs)" ] ; then
+         /usr/bin/emacs --daemon &
+     fi
+
+     # Daemons
+     #emacs --daemon &
+     #udiskie &
+     #nm-applet --indicator &
+     #lxqt-powermanagement &
+
+     # Settings
+     xrdb -merge "$HOME/.config/X11/Xresources" &
+     #xmodmap -e 'add mod3 = Menu'
+     #xmodmap -e "keycode 135 = Hyper_R"
+     #xmodmap -e "add mod3 = Hyper_R"
+     #xmodmap -e "keycode any = Menu" # this is needed for xcape
+     #xcape -e "Hyper_R=Menu" # for single key press on menu key
+     setxkbmap -model pc105 -layout us,ru -variant ,phonetic -option grp:shifts_toggle -option ctrl:nocaps # -option compose:menu
+     xmodmap ~/.config/X11/Xmodmap
+
+     xsetroot -grey -cursor_name left_ptr &
+
+   #+end_src
+
+   #+RESULTS:
+
+** Screenshots
+
+   # Recording
+   # Take screenshot
+   # Print: Record audio or video; Del: kill recording
+   super + Print
+   dmenurecord
+   super + Delete
+   dmenurecord kill
+
+   #+begin_src shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/screenshot"
+     APP="maim"
+     LOCATION="$HOME/Pictures/Screenshots"
+     FNAME="screenshot-$(date '+%Y-%m-%d-%H:%M:%S').png"
+     CHOICE="Fullscreen"
+
+     mkdir -p "$LOCATION"
+
+     shoot() {
+         CHOICE=$(printf "a selected area\\ncurrent window\\nfull screen\\na selected area (copy)\\ncurrent window (copy)\\nfull screen (copy)" | dmenu -l 6 -i -p "Screenshot which area?")
+
+         case "$CHOICE" in
+
+             "a selected area")
+                 maim -s  "$TARGET" ;;
+             "current window")
+                 maim -i "$(xdotool getactivewindow)"  "$TARGET" ;;
+             "full screen")
+                 maim  "$TARGET" ;;
+             "a selected area (copy)")
+                 maim -s | xclip -selection clipboard -t image/png ;;
+             "current window (copy)")
+                 maim -i "$(xdotool getactivewindow)" | xclip -selection clipboard -t image/png ;;
+             "full screen (copy)")
+                 maim | xclip -selection clipboard -t image/png ;;
+         esac
+     }
+
+     notify() {
+
+         convert "$TARGET" -resize 128x128  "$SMALL"
+         notify-send "$CHOICE" "screen-\nshot" -i "$SMALL"
+         rm "$SMALL"
+
+     }
+
+     usage() {
+         cat <<EOF
+     $(basename $0) -h -n
+     -h this message
+     -n screenshot
+      If you use the script with -n, you get a fullscreen screenshot,
+     otherwise dmenu offers:
+      - a selected area
+     - current window
+     - full screen
+     - a selected area (copy)
+     - current window (copy)
+     - full screen (copy)
+     EOF
+         exit
+     }
+
+     TARGET="$LOCATION/$FNAME"
+     SMALL="/tmp/$(basename "$TARGET").tmp"
+
+     while getopts "hn" opt; do
+         case $opt in
+             n)
+                 $APP "$TARGET"
+                 notify
+                 exit
+                 ;;
+             ,*) usage ;;
+         esac
+     done
+
+     shoot
+     notify
+   #+end_src
+
+* Xmobar
+
+  Three kind of fonts used, regular, bold for the time, and font-awesome for icons.
+  Colors the same as in =xmonad.hs=.
+
+  #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
+  Config { position = Top
+           , font     = "xft:Source Code Pro:size=9:bold:antialias=true"
+           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true",
+                                   "xft:Noto Sans:size=10:style=Bold"]
+           , fgColor = "#ffffff"
+           , bgColor = "#000000"
+           , alpha = 50  -- 0 transparent, 255 opaque
+           , sepChar = "%"
+           , alignSep = "}{"
+           , template = " %StdinReader% }{ %cpu%  %memory%  %coretemp% %wi%  %battery% %keyb% | %date% "
+           , commands = [ Run StdinReader
+                        --, Run Date "%_I:%M" "time" 300 -- every 30s
+                        --, Run Date "%A %_d %B" "date" 18000 -- every 30min
+                        -- CPU core temperature
+                        , Run CoreTemp [ "--template" , "<core0>/<core1>°C"
+                                       , "--Low"      , "70"
+                                       , "--High"     , "80"
+                                       , "--low"      , "#33BB33"
+                                       , "--normal"   , "#AA8800"
+                                       , "--high"     , "#FF0000"
+                                       ] 50 -- every 5s
+                       , Run Com "myKb" [] "keyb" 50
+                       , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc> <total>%"
+                                --, "--normal","#bbc2cf"
+                                , "-L", "40"
+                                , "-H", "60"
+                                , "-l", "#586e75"
+                                , "-h", "#dc322f" -- red
+                                ] 50
+                       , Run Memory ["-t","<fc=#51afef><fn=1></fn></fc> <usedratio>%"
+                                    , "-H","80"
+                                    , "-L","10"
+                                    , "-l", "#586e75"
+                                    , "-h", "#268bd2" -- blue, just to differentiate from cpu bar
+                                    ] 50
+                       , Run Wireless "" -- will match any wireless device
+                         [ "-a", "l"
+                         , "-x", "-"
+                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid> <quality>%</fc>"
+                         , "-L", "50"
+                         , "-H", "75"
+                         -- , "-l", "#dc322f" -- red
+                         , "-l", "#6c71c4" -- violet
+                         , "-n", "#6c71c4" -- violet
+                         , "-h", "#6c71c4" -- violet
+                         ] 10
+                       , Run Battery
+                         [ "-t", "<fc=#b58900><acstatus></fc>"
+                         , "-L", "20"
+                         , "-H", "85"
+                         , "-l", "#dc322f"
+                         , "-n", "#b58900"
+                         , "-h", "#b58900"
+                         , "--" -- battery specific options
+                         -- discharging status
+                         , "-o"  , "<fn=1>\xf242</fn> <left>% (<timeleft>) <watts>"
+                         -- AC "on" status
+                         , "-O"  , "<fn=1>\xf1e6</fn> <left>%"
+                         -- charged status
+                         , "-i"  , "<fn=1>\xf1e6</fn> <left>%"
+                         , "--off-icon-pattern", "<fn=1>\xf1e6</fn>"
+                         , "--on-icon-pattern", "<fn=1>\xf1e6</fn>"
+                         ] 10
+                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %_d %b %Y | d.%j w.%W</fc>   <fc=#2AA198><fn=1></fn><fn=2> %H:%M:%S</fn></fc>" "date" 10
+                        ]
+           }
+
+   #+end_src
