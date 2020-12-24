@@ -16,14 +16,17 @@
     #!/bin/sh
     #
     # As of 0.13, xmonad --recompile will look for a custom build script.
+    EXEC_PATH="$1"
 
     set -e
     ICON="~/Pictures/Icons/Xmonad-logo.svg.png"
 
+    rm -rf ~/.xmonad #carefull!!
     cd ~/.config/xmonad
-    notify-send "Xmonad" "Build started ($1)" -i "$ICON"
+    notify-send "Xmonad" "Build started ($1)" -i "$ICON" &
     #stack build || stack init
-    stack install
+    stack install || notify-send "Xmonad FAILED!" "Build error ($@)" -i "$ICON" &
+    ln -sf ~/.local/bin/xmonad $EXEC_PATH #!!
     xmonad --restart
   #+end_src
 
@@ -131,7 +134,7 @@
      import MyCheatsheet
      import MyBar
      import MyLayoutHook
-     import MyManageHook
+     import MyManageHook (myManageHook)
 
      -- My workspaces are currently just numbers
      myWorkspaces :: [String]
@@ -195,6 +198,7 @@
     myGuiFileManager = "pcmanfm"
     myPdfReader      = "zathura"
     myPrintScreen    = "screenshotS"
+    myAudiocontrol   = "pavucontrol"
 
     data Bar = Taffybar | XMobar | Tint2 deriving (Eq)
     myBar :: Bar
@@ -274,9 +278,11 @@
     import XMonad.Util.EZConfig     -- Simpler keybinding syntax
     import XMonad.Util.NamedActions -- Allows labelling of keybindings
     import qualified XMonad.StackSet as W
+    import XMonad.Util.NamedScratchpad
 
     -- Which programs to use as defaults
     import Options
+    import MyScratchpads
 
   #+end_src
 
@@ -305,20 +311,16 @@
         subKeys name list = subtitle name : mkNamedKeymap conf list
 
         -- Abbreviations for certain actions
-        menuEditScript         = spawn $ args "menu-edit-script" [myMenu,myEditor]
-        menuEditConfig         = spawn $ args "menu-edit-config" [myMenu,myEditor]
-        menuChangeColourscheme = spawn $ args "menu-change-colourscheme" [myMenu]
-        menuReadPdf            = spawn $ args "menu-read-pdf" [myMenu,myPdfReader]
+        menuEditScript         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
+        menuEditConfig         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
+        menuChangeColourscheme = spawn $ args "menuEditConfigsS" [myMenu]
 
         viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
         shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
         unFloat               = withFocused $ windows . W.sink
 
-        volumeAdjust "toggle" = spawn "adjust-volume toggle"
-        volumeAdjust value    = spawn $ args "adjust-volume" $ words value
-
-        brightnessAdjust perc = spawn
-            $ "xbacklight " ++ perc ++ " && notify-send \"Brightness `xbacklight -get`%\""
+        volumeAdjust "toggle" = spawn "adjustVolumeS toggle"
+        volumeAdjust value    = spawn $ args "adjustVolumeS" $ words value
 
         in
 
@@ -396,32 +398,39 @@
         , ("M3-d",                    addName "Start apps (I3 dmenu)"  $ spawn myAppM)
         , ("M3-e",                    addName "Text editor"            $ spawn myEditor)
         , ("M3-w",                    addName "Web browser (minimal)"  $ spawn myBrowser)
-        , ("M3-S-w",                  addName "Firefox"                $ spawn "firefox")
+        , ("M3-S-w",                  addName "Chromium"               $ spawn "chromium")
+        , ("M3-C-w",                  addName "Chromium anonymous"     $ spawn "chromium --name=ignognito --incognito")
         , ("M3-f",                    addName "Terminal file manager"  $ spawn myFileManager)
         , ("M3-S-f",                  addName "Graphical file manager" $ spawn myGuiFileManager)
         , ("M3-z",                    addName "Zoom"                   $ spawn "zoom")
         ] ^++^
 
         subKeys "My Scripts"
-        [ ("M3-p M-p",                 addName "Edit scripts"           $ menuEditScript)
-        , ("M3-p M-e",                 addName "Edit configs"           $ menuEditConfig)
-        , ("M3-p M-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
-        , ("M3-p M-z",                 addName "Read PDF file"          $ menuReadPdf)
+        [ ("M3-p M3-p",                 addName "Edit scripts"           $ menuEditScript)
+        , ("M3-p M3-e",                 addName "Edit configs"           $ menuEditConfig)
+        , ("M3-p M3-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
+        -- , ("M3-p M3-z",                 addName "Read PDF file"          $ menuReadPdf)
         ] ^++^
 
         subKeys "Multimedia Keys"
-        [ ("<XF86AudioMute>",         addName "Toggle mute"            $ volumeAdjust "toggle")
-        , ("<XF86AudioLowerVolume>",  addName "Decrease volume"        $ volumeAdjust "- 5%")
-        , ("<XF86AudioRaiseVolume>",  addName "Increase volume"        $ volumeAdjust "+ 5%")
-        , ("<XF86MonBrightnessDown>", addName "Decrease brightness"    $ brightnessAdjust "-dec 10")
-        , ("<XF86MonBrightnessUp>",   addName "Increase brightness"    $ brightnessAdjust "-inc 10")
-        , ("C-<F1>",                  addName "Toggle mute"            $ volumeAdjust "toggle")
-        , ("C-<F2>",                  addName "Decrease volume"        $ volumeAdjust "- 5%")
-        , ("C-<F3>",                  addName "Increase volume"        $ volumeAdjust "+ 5%")
-        , ("C-<F11>",                 addName "Decrease brightness"    $ brightnessAdjust "-dec 10")
-        , ("C-<F12>",                 addName "Increase brightness"    $ brightnessAdjust "-inc 10")
+        [ ("<XF86AudioMute>",         addName "Toggle mute"            $ volumeAdjust "togmute")
+        , ("<XF86AudioLowerVolume>",  addName "Decrease volume"        $ volumeAdjust "down")
+        , ("<XF86AudioRaiseVolume>",  addName "Increase volume"        $ volumeAdjust "up")
+        , ("<XF86MonBrightnessDown>", addName "Decrease brightness"    $ spawn "backlightS -dec 10")
+        , ("<XF86MonBrightnessUp>",   addName "Increase brightness"    $ spawn "backlightS -inc 10")
+        , ("<XF86TouchpadToggle>",    addName "Toggle Touchpad"        $ spawn "toggleTouchpadS")
         , ("<Print>",                 addName "Take screenshot"        $ spawn (myPrintScreen ++ " -n"))
         , ("S-<Print>",               addName "Take screenshot menu"   $ spawn myPrintScreen)
+        ] ^++^
+
+        subKeys "Scratchpads"
+        [ ("M-C-<Return>", addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
+        , ("M-`"         , addName "Scratchpad"     $ namedScratchpadAction myScratchPads "scratchpad")
+        , ("M-z a"       , addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
+        , ("M-<F2>"      , addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
+        , ("M-z m"       , addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
+        , ("M-z w"       , addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
+        , ("M-z p"       , addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
         ]
 
   #+end_src
@@ -567,6 +576,7 @@
           $ tabbed shrinkText myTabConfig
 
     myLayoutHook = smartBorders
+                 $ avoidStruts
     --           $ mySideDecorate  -- Messes up everything - I don't yet understand why
                  $ mkToggle (single NBFULL)
                  $ tall ||| three ||| tabs
@@ -581,25 +591,32 @@
   Module declaration:
 
   #+begin_src haskell -n
-    module MyManageHook (myManageHook) where
+module MyManageHook
+(myManageHook)
+where
 
-    import Data.List (isInfixOf)
-    import XMonad
-    import XMonad.Hooks.ManageDocks
+import Data.List (isInfixOf)
+import Data.Ratio
+import XMonad
+import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers
+import qualified XMonad.StackSet as W
+
+import MyScratchpads (myScratchPads)
+import XMonad.Util.NamedScratchpad
 
   #+end_src
 
   Help functions:
 
   #+begin_src haskell -n
-    titleContains :: String -> Query Bool
-    titleContains string = fmap (isInfixOf string) title
+titleContains :: String -> Query Bool
+titleContains string = fmap (isInfixOf string) title
 
-    isZoomNotification :: Query Bool
-    isZoomNotification = className =? "zoom" <&&> title =? "zoom"
+isZoomNotification :: Query Bool
+isZoomNotification = className =? "zoom" <&&> title =? "zoom"
 
   #+end_src
-
 
    **Window rules: Manage Hook**
 
@@ -626,21 +643,67 @@
    The resource corresponds to the second value of WM_CLASS (also “Pidgin”).
    The title corresponds to WM_NAME (“Buddy List”).
 
-  #+begin_src haskell
-    manageSpecific :: ManageHook
-    manageSpecific = composeAll . concat $
-        [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
-        , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
-        , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
-        , [ isZoomNotification                        --> doFloat ]
-        ]
-        where
-            myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
-            myFloatTitles  = ["Whisker Menu"]
-            myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
+  #+begin_src haskell -n
+manageSpecific :: ManageHook
+manageSpecific = composeAll . concat $
+    [ [ className  =? c                           --> doFloat | c <- myFloatClasses ]
+    , [ title      =? t                           --> doFloat | t <- myFloatTitles ]
+    -- , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
+    -- , [ className  =? "zoom" <&&> titleContains z --> doFloatAt' (100/1920) (30/1040) | z <- ["Zoom - Free Account"] ]
+    -- , [ resource   =? "zoom" <&&> titleContains z  --> doRectFloat (W.RationalRect (1/1920)(30/1040)(1/3)(9/10)) | z <- ["Zoom - Free Account"] ]
+    -- , [ resource   =? "gsimplecal"                --> customFloating $ W.RationalRect 0.3 0.3 0.3 0.3 ]
+    -- , [ resource   =? "gsimplecal"                --> doFloatAt' (1554/1920) (30/1040) ]
+    , [ isZoomNotification                        --> doFloat ]
+    , [ className  =? "Chromium" <&&> role =? "GtkFileChooserDialog" --> largeFloat]
+    , [ (title     =? "emacs-capture" )     --> smallFloat ]
+    ]
+    where
+        myFloatClasses = ["Gimp", "conky", "plasmashell", "vlc", "Nitrogen", "Tint2conf"]
+        myFloatTitles  = ["Whisker Menu"]
+        myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
+        role = stringProperty "WM_WINDOW_ROLE"
+        doMaster = doF W.shiftMaster --append this to all floats so new windows always go on top, regardless of the current focus
+        doFloatAt' x y = doFloatAt x y <+> doMaster
 
-    myManageHook :: ManageHook
-    myManageHook = manageSpecific <+> manageDocks
+myManageHook :: ManageHook
+myManageHook = manageSpecific <+> manageDocks  <+> namedScratchpadManageHook myScratchPads
+
+  #+end_src
+
+  #+begin_src haskell -n
+largeFloat :: ManageHook
+largeFloat = doFloatDep move
+  where
+    move :: W.RationalRect -> W.RationalRect
+    move _ = W.RationalRect x y w h
+    w, h, x, y :: Rational
+    w = 3/4
+    h = 3/4
+    x = (1-w)/2
+    y = (1-h)/2
+
+
+smallFloat :: ManageHook
+smallFloat = doFloatDep move
+  where
+    move :: W.RationalRect -> W.RationalRect
+    move _ = W.RationalRect x y w h
+    w, h, x, y :: Rational
+    w = 2/3
+    h = 1/4
+    x = (1-w)/2
+    y = (1-h)/2
+
+zoomFloat :: ManageHook
+zoomFloat = doFloatDep move
+  where
+    move :: W.RationalRect -> W.RationalRect
+    move _ = W.RationalRect x y w h
+    w, h, x, y :: Rational
+    w = 1/4
+    h = 1/4
+    x = (1-w)/2
+    y = (1-h)/2
 
   #+end_src
 
@@ -777,6 +840,78 @@
                 -e $eventActions
 
   #+end_src
+* src/myScratchpads
+  :PROPERTIES:
+  :header-args:  :tangle "~/.config/xmonad/src/MyScratchpads.hs"
+  :END:
+
+  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedScratchpad.html][XMonad.Util.NamedScratchpad]] --
+
+  #+begin_src haskell -n
+    module MyScratchpads
+    (myScratchPads)
+    where
+
+    import XMonad
+    import Options
+    import XMonad.Util.NamedScratchpad
+    import qualified XMonad.StackSet as W
+  #+end_src
+
+  #+begin_src haskell -n
+    ---------------------------------------------------------------------------
+    -- SCRATCHPADS                                                           --
+    ---------------------------------------------------------------------------
+    myScratchPads :: [NamedScratchpad]
+    myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
+                    , NS "myPavu" spawnPavu findPavu managePavu
+                    , NS "myMusic" spawnMocp findMocp manageMocp
+                    , NS "myWhatsApp" spawnWhatsApp findWhatsApp manageWhatsApp
+                    , NS "myProtonmail" spawnProtonmail findProtonmail manageProtonmail
+                    ]
+      where
+        spawnTerm  = myTerminal ++ " --class scratchPad"
+        findTerm   = resource =? "scratchPad"
+        manageTerm = customFloating $ W.RationalRect l t w h
+                   where
+                     h = 0.6
+                     w = 0.9
+                     t = 1 - h     -- bottom edge
+                     l = (1 - w)/2 -- centered left/right
+        spawnPavu  = myAudiocontrol ++ " --class myPavu"
+        findPavu   = resource =? "pavucontrol" --TODO how to catch second field?
+        managePavu = customFloating $ W.RationalRect l t w h
+                   where
+                     h = 0.7
+                     w = 0.7
+                     t = (1 - h)/2 -- centered top/bottom
+                     l = (1 - w)/2 -- centered left/right
+        spawnMocp  = "alacritty --class myMusic -e ncmpcpp"
+        findMocp   = resource =? "myMusic"
+        manageMocp = customFloating $ W.RationalRect l t w h
+                   where
+                     h = 0.9
+                     w = 0.9
+                     t = 0.95 -h
+                     l = 0.95 -w
+        spawnWhatsApp  = "chromium --app=https://web.whatsapp.com/"
+        findWhatsApp   = appName =? "web.whatsapp.com"
+        manageWhatsApp = customFloating $ W.RationalRect l t w h
+                   where
+                     h = 0.9
+                     w = 0.9
+                     t = 0.95 -h
+                     l = 0.95 -w
+        spawnProtonmail  = "chromium --app=https://mail.protonmail.com/"
+        findProtonmail   = appName =? "mail.protonmail.com"
+        manageProtonmail = customFloating $ W.RationalRect l t w h
+                   where
+                     h = 0.9
+                     w = 0.9
+                     t = 0.95 -h
+                     l = 0.95 -w
+  #+end_src
+
 * External scripts
 ** (Xmonad) pre-startup script
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
@@ -824,8 +959,23 @@
    #+RESULTS:
 
 ** WM scripts
+*** Xprop wrapper - xmonpropS
+
+    Source: [[https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_need_to_find_the_class_title_or_some_other_X_property_of_my_program][Haskell wiki]]
+
+     #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/xmonPropS"
+
+       exec xprop -notype \
+        -f WM_NAME        8s ':\n  title =\? $0\n' \
+        -f WM_CLASS       8s ':\n  appName =\? $0\n  className =\? $1\n' \
+        -f WM_WINDOW_ROLE 8s ':\n  stringProperty "WM_WINDOW_ROLE" =\? $0\n' \
+        WM_NAME WM_CLASS WM_WINDOW_ROLE \
+        ${1+"$@"}
+
+    #+end_src
+
 *** Keyboard indicator Mobar
-    #+begin_src  shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKb"
+    #+begin_src  shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKbS"
       stdlayout=us  # standard layout takes "default" color
       stdname=en-us # arbitrary, descriptive only
 
@@ -856,18 +1006,673 @@
       echo "<fc=$color><fn=1>$icon</fn> ${name}</fc>"
     #+end_src
 
-*** Xprop wrapper - xmonprop
+*** adjustVolumeS
 
-    Source: [[https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_need_to_find_the_class_title_or_some_other_X_property_of_my_program][Haskell wiki]]
+    Pulseaudio version, huge, see =adjustVolumeS help=.
 
-     #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/xmonProp"
+    #+begin_src shell  :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/adjustVolumeS"
 
-       exec xprop -notype \
-        -f WM_NAME        8s ':\n  title =\? $0\n' \
-        -f WM_CLASS       8s ':\n  appName =\? $0\n  className =\? $1\n' \
-        -f WM_WINDOW_ROLE 8s ':\n  stringProperty "WM_WINDOW_ROLE" =\? $0\n' \
-        WM_NAME WM_CLASS WM_WINDOW_ROLE \
-        ${1+"$@"}
+##################################################################
+# Polybar Pulseaudio Control                                     #
+# https://github.com/marioortizmanero/polybar-pulseaudio-control #
+##################################################################
+#
+# Broken by QWxlea
+
+# Defaults for configurable values, expected to be set by command-line arguments
+msgId="991001"
+AUTOSYNC="no"
+COLOR_MUTED="%{F#6b6b6b}"
+ICON_MUTED=
+ICON_SINK=
+NOTIFICATIONS="no"
+OSD="yes"
+SINK_NICKNAMES_PROP=
+VOLUME_STEP=2
+VOLUME_MAX=130
+# shellcheck disable=SC2016
+FORMAT='$VOL_ICON ${VOL_LEVEL}%  $ICON_SINK $SINK_NICKNAME'
+declare -A SINK_NICKNAMES
+declare -a ICONS_VOLUME
+declare -a SINK_BLACKLIST
+
+# Environment & global constants for the script
+END_COLOR="%{F-}"  # For Polybar colors
+LANGUAGE=en_US  # Some calls depend on English outputs of pactl
+
+
+# Saves the currently default sink into a variable named `curSink`. It will
+# return an error code when pulseaudio isn't running.
+function getCurSink() {
+    if ! pulseaudio --check; then return 1; fi
+    curSink=$(pacmd list-sinks | awk '/\* index:/{print $3}')
+}
+
+
+# Saves the sink passed by parameter's volume into a variable named `VOL_LEVEL`.
+function getCurVol() {
+    VOL_LEVEL=$(pacmd list-sinks | grep -A 15 'index: '"$1"'' | grep 'volume:' | grep -E -v 'base volume:' | awk -F : '{print $3; exit}' | grep -o -P '.{0,3}%' | sed 's/.$//' | tr -d ' ')
+}
+
+
+# Saves the name of the sink passed by parameter into a variable named
+# `sinkName`.
+function getSinkName() {
+    sinkName=$(pactl list sinks short | awk -v sink="$1" '{ if ($1 == sink) {print $2} }')
+}
+
+
+# Saves the name to be displayed for the sink passed by parameter into a
+# variable called `SINK_NICKNAME`.
+# If a mapping for the sink name exists, that is used. Otherwise, the string
+# "Sink #<index>" is used.
+function getNickname() {
+    getSinkName "$1"
+    unset SINK_NICKNAME
+
+    if [ -n "$sinkName" ] && [ -n "${SINK_NICKNAMES[$sinkName]}" ]; then
+        SINK_NICKNAME="${SINK_NICKNAMES[$sinkName]}"
+    elif [ -n "$sinkName" ] && [ -n "$SINK_NICKNAMES_PROP" ]; then
+        getNicknameFromProp "$SINK_NICKNAMES_PROP" "$sinkName"
+        # Cache that result for next time
+        SINK_NICKNAMES["$sinkName"]="$SINK_NICKNAME"
+    fi
+
+    if [ -z "$SINK_NICKNAME" ]; then
+        SINK_NICKNAME="Sink #$1"
+    fi
+}
+
+# Gets sink nickname based on a given property.
+function getNicknameFromProp() {
+    local nickname_prop="$1"
+    local for_name="$2"
+
+    SINK_NICKNAME=
+    while read -r property value; do
+        case "$property" in
+            name:)
+                sink_name="${value//[<>]/}"
+                unset sink_desc
+                ;;
+            "$nickname_prop")
+                if [ "$sink_name" != "$for_name" ]; then
+                    continue
+                fi
+                SINK_NICKNAME="${value:3:-1}"
+                break
+                ;;
+        esac
+    done < <(pacmd list-sinks)
+}
+
+# Saves the status of the sink passed by parameter into a variable named
+# `isMuted`.
+function getIsMuted() {
+    isMuted=$(pacmd list-sinks | grep -A 15 "index: $1" | awk '/muted/ {print $2; exit}')
+}
+
+
+# Saves all the sink inputs of the sink passed by parameter into a string
+# named `sinkInputs`.
+function getSinkInputs() {
+    sinkInputs=$(pacmd list-sink-inputs | grep -B 4 "sink: $1 " | awk '/index:/{print $2}')
+}
+
+
+function volUp() {
+    # Obtaining the current volume from pacmd into $VOL_LEVEL.
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+    getCurVol "$curSink"
+    local maxLimit=$((VOLUME_MAX - VOLUME_STEP))
+
+    # Checking the volume upper bounds so that if VOLUME_MAX was 100% and the
+    # increase percentage was 3%, a 99% volume would top at 100% instead
+    # of 102%. If the volume is above the maximum limit, nothing is done.
+    if [ "$VOL_LEVEL" -le "$VOLUME_MAX" ] && [ "$VOL_LEVEL" -ge "$maxLimit" ]; then
+        pactl set-sink-volume "$curSink" "$VOLUME_MAX%"
+    elif [ "$VOL_LEVEL" -lt "$maxLimit" ]; then
+        pactl set-sink-volume "$curSink" "+$VOLUME_STEP%"
+    fi
+
+    if [ $OSD = "yes" ]; then showOSD "$curSink"; fi
+    if [ $AUTOSYNC = "yes" ]; then volSync; fi
+}
+
+
+function volDown() {
+    # Pactl already handles the volume lower bounds so that negative values
+    # are ignored.
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+    pactl set-sink-volume "$curSink" "-$VOLUME_STEP%"
+
+    if [ $OSD = "yes" ]; then showOSD "$curSink"; fi
+    if [ $AUTOSYNC = "yes" ]; then volSync; fi
+}
+
+
+function volSync() {
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+    getSinkInputs "$curSink"
+    getCurVol "$curSink"
+
+    # Every output found in the active sink has their volume set to the
+    # current one. This will only be called if $AUTOSYNC is `yes`.
+    for each in $sinkInputs; do
+        pactl set-sink-input-volume "$each" "$VOL_LEVEL%"
+    done
+}
+
+
+function volMute() {
+    # Switch to mute/unmute the volume with pactl.
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+    if [ "$1" = "toggle" ]; then
+        getIsMuted "$curSink"
+        if [ "$isMuted" = "yes" ]; then
+            pactl set-sink-mute "$curSink" "no"
+        else
+            pactl set-sink-mute "$curSink" "yes"
+        fi
+    elif [ "$1" = "mute" ]; then
+        pactl set-sink-mute "$curSink" "yes"
+    elif [ "$1" = "unmute" ]; then
+        pactl set-sink-mute "$curSink" "no"
+    fi
+
+    if [ $OSD = "yes" ]; then showOSD "$curSink"; fi
+}
+
+
+function nextSink() {
+    # The final sinks list, removing the blacklisted ones from the list of
+    # currently available sinks.
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+
+    # Obtaining a tuple of sink indexes after removing the blacklisted devices
+    # with their name.
+    sinks=()
+    local i=0
+    while read -r line; do
+        index=$(echo "$line" | cut -f1)
+        name=$(echo "$line" | cut -f2)
+
+        # If it's in the blacklist, continue the main loop. Otherwise, add
+        # it to the list.
+        for sink in "${SINK_BLACKLIST[@]}"; do
+            if [ "$sink" = "$name" ]; then
+                continue 2
+            fi
+        done
+
+        sinks[$i]="$index"
+        i=$((i + 1))
+    done < <(pactl list short sinks)
+
+    # If the resulting list is empty, nothing is done
+    if [ ${#sinks[@]} -eq 0 ]; then return; fi
+
+    # If the current sink is greater or equal than last one, pick the first
+    # sink in the list. Otherwise just pick the next sink avaliable.
+    local newSink
+    if [ "$curSink" -ge "${sinks[-1]}" ]; then
+        newSink=${sinks[0]}
+    else
+        for sink in "${sinks[@]}"; do
+            if [ "$curSink" -lt "$sink" ]; then
+                newSink=$sink
+                break
+            fi
+        done
+    fi
+
+    # The new sink is set
+    pacmd set-default-sink "$newSink"
+
+    # Move all audio threads to new sink
+    local inputs
+    inputs="$(pactl list short sink-inputs | cut -f 1)"
+    for i in $inputs; do
+        pacmd move-sink-input "$i" "$newSink"
+    done
+
+    if [ $NOTIFICATIONS = "yes" ]; then
+        getNickname "$newSink"
+
+        if command -v dunstify &>/dev/null; then
+            notify="dunstify --replace 201839192"
+        else
+            notify="notify-send"
+        fi
+        $notify "PulseAudio" "Changed output to $SINK_NICKNAME" --icon=audio-headphones-symbolic &
+    fi
+}
+
+
+# This function assumes that PulseAudio is already running. It only supports
+# KDE OSDs for now. It will show a system message with the status of the
+# sink passed by parameter, or the currently active one by default.
+function showOSD() {
+    if [ -z "$1" ]; then
+        curSink="$1"
+    else
+        getCurSink
+    fi
+    getCurVol "$curSink"
+    getIsMuted "$curSink"
+    #returns "$VOL_LEVEL" "$isMuted"
+    if [[ $VOL_LEVEL == 0 || "yes" = "$isMuted" ]]; then
+        # Show the sound muted notification
+        echo "nope"
+        dunstify -a "changeVolume" -u low -i audio-volume-muted -r "$msgId" "Volume muted"
+    else
+        # Show the volume notification
+        if [ $VOL_LEVEL -lt 30 ];then
+            ICON="audio-volume-low"
+        elif [ $VOL_LEVEL -lt 65 ];then
+            ICON="audio-volume-medium"
+        elif [ $VOL_LEVEL -lt 100 ];then
+            ICON="audio-volume-high"
+        else
+            ICON="audio-volume-overamplified"
+        fi
+
+        dunstify -a "changeVolume" -u low -i "$ICON" -r "$msgId" \
+                 "Volume: ${VOL_LEVEL}%" "$(getProgressStringS 10 "<b> </b>" " " $VOL_LEVEL)"
+    fi
+    #echo "DB: vol_level:($VOL_LEVEL) isMuted: ($isMuted)"
+}
+
+
+function listen() {
+    local firstRun=0
+
+    # Listen for changes and immediately create new output for the bar.
+    # This is faster than having the script on an interval.
+    LANG=$LANGUAGE pactl subscribe 2>/dev/null | {
+        while true; do
+            {
+                # If this is the first time just continue and print the current
+                # state. Otherwise wait for events. This is to prevent the
+                # module being empty until an event occurs.
+                if [ $firstRun -eq 0 ]; then
+                    firstRun=1
+                else
+                    read -r event || break
+                    # Avoid double events
+                    if ! echo "$event" | grep -e "on card" -e "on sink" -e "on server"; then
+                        continue
+                    fi
+                fi
+            } &>/dev/null
+            output
+        done
+    }
+}
+
+
+function output() {
+    if ! getCurSink; then
+        echo "PulseAudio not running"
+        return 1
+    fi
+    getCurVol "$curSink"
+    getIsMuted "$curSink"
+
+    # Fixed volume icons over max volume
+    local iconsLen=${#ICONS_VOLUME[@]}
+    if [ "$iconsLen" -ne 0 ]; then
+        local volSplit=$((VOLUME_MAX / iconsLen))
+        for i in $(seq 1 "$iconsLen"); do
+            if [ $((i * volSplit)) -ge "$VOL_LEVEL" ]; then
+                VOL_ICON="${ICONS_VOLUME[$((i-1))]}"
+                break
+            fi
+        done
+    else
+        VOL_ICON=""
+    fi
+
+    getNickname "$curSink"
+
+    # Showing the formatted message
+    if [ "$isMuted" = "yes" ]; then
+        # shellcheck disable=SC2034
+        VOL_ICON=$ICON_MUTED
+        echo "${COLOR_MUTED}$(eval echo "$FORMAT")${END_COLOR}"
+    else
+        eval echo "$FORMAT"
+    fi
+}
+
+
+function usage() {
+    echo "\
+Usage: $0 [OPTION...] ACTION
+
+Options: [defaults]
+  --autosync | --no-autosync            whether to maintain same volume for all
+                                        programs [$AUTOSYNC]
+  --color-muted <rrggbb>                color in which to format when muted
+                                        [${COLOR_MUTED:4:-1}]
+  --notifications | --no-notifications  whether to show notifications when
+                                        changing sinks [$NOTIFICATIONS]
+  --osd | --no-osd                      whether to display KDE's OSD message
+                                        [$OSD]
+  --icon-muted <icon>                   icon to use when muted [none]
+  --icon-sink <icon>                    icon to use for sink [none]
+  --format <string>                     use a format string to control the output
+                                        Available variables: \$VOL_ICON,
+                                        \$VOL_LEVEL, \$ICON_SINK, and
+                                        \$SINK_NICKNAME
+                                        [$FORMAT]
+  --icons-volume <icon>[,<icon>...]     icons for volume, from lower to higher
+                                        [none]
+  --volume-max <int>                    maximum volume to which to allow
+                                        increasing [$VOLUME_MAX]
+  --volume-step <int>                   step size when inc/decrementing volume
+                                        [$VOLUME_STEP]
+  --sink-blacklist <name>[,<name>...]   sinks to ignore when switching [none]
+  --sink-nicknames-from <prop>          pacmd property to use for sink names,
+                                        unless overriden by --sink-nickname.
+                                        Its possible values are listed under
+                                        the 'properties' key in the output of
+                                        \`pacmd list-sinks\` [none]
+  --sink-nickname <name>:<nick>         nickname to assign to given sink name,
+                                        taking priority over
+                                        --sink-nicknames-from. May be given
+                                        multiple times, and 'name' is exactly as
+                                        listed in the output of
+                                        \`pactl list sinks short | cut -f2\`
+                                        [none]
+
+Actions:
+  help              display this message and exit
+  output            print the PulseAudio status once
+  listen            listen for changes in PulseAudio to automatically update
+                    this script's output
+  up, down          increase or decrease the default sink's volume
+  mute, unmute      mute or unmute the default sink's audio
+  togmute           switch between muted and unmuted
+  next-sink         switch to the next available sink
+  sync              synchronize all the output streams volume to be the same as
+                    the current sink's volume
+
+Author:
+    Mario Ortiz Manero
+More info on GitHub:
+    https://github.com/marioortizmanero/polybar-pulseaudio-control"
+}
+
+while [[ "$1" = --* ]]; do
+    unset arg
+    unset val
+    if [[ "$1" = *=* ]]; then
+        arg="${1//=*/}"
+        val="${1//*=/}"
+        shift
+    else
+        arg="$1"
+        # Support space-separated values, but also value-less flags
+        if [[ "$2" != --* ]]; then
+            val="$2"
+            shift
+        fi
+        shift
+    fi
+
+    case "$arg" in
+        --autosync)
+            AUTOSYNC=yes
+            ;;
+        --no-autosync)
+            AUTOSYNC=no
+            ;;
+        --color-muted|--colour-muted)
+            COLOR_MUTED="%{F#$val}"
+            ;;
+        --notifications)
+            NOTIFICATIONS=yes
+            ;;
+        --no-notifications)
+            NOTIFICATIONS=no
+            ;;
+        --osd)
+            OSD=yes
+            ;;
+        --no-osd)
+            OSD=no
+            ;;
+        --icon-muted)
+            ICON_MUTED="$val"
+            ;;
+        --icon-sink)
+            # shellcheck disable=SC2034
+            ICON_SINK="$val"
+            ;;
+        --icons-volume)
+            IFS=, read -r -a ICONS_VOLUME <<< "$val"
+            ;;
+        --volume-max)
+            VOLUME_MAX="$val"
+            ;;
+        --volume-step)
+            VOLUME_STEP="$val"
+            ;;
+        --sink-blacklist)
+            IFS=, read -r -a SINK_BLACKLIST <<< "$val"
+            ;;
+        --sink-nicknames-from)
+            SINK_NICKNAMES_PROP="$val"
+            ;;
+        --sink-nickname)
+            SINK_NICKNAMES["${val//:*/}"]="${val//*:}"
+            ;;
+        --format)
+            FORMAT="$val"
+            ;;
+        ,*)
+            echo "Unrecognised option: $arg" >&2
+            exit 1
+            ;;
+    esac
+done
+
+case "$1" in
+    up)
+        volUp
+        ;;
+    down)
+        volDown
+        ;;
+    togmute)
+        volMute toggle
+        ;;
+    mute)
+        volMute mute
+        ;;
+    unmute)
+        volMute unmute
+        ;;
+    sync)
+        volSync
+        ;;
+    listen)
+        listen
+        ;;
+    next-sink)
+        nextSink
+        ;;
+    output)
+        output
+        ;;
+    help)
+        usage
+        ;;
+    ,*)
+        echo "Unrecognised action: $1" >&2
+        exit 1
+        ;;
+esac
+    #+end_src
+
+    Alsa version, sometimes got stuck, unused
+
+    #+begin_src shell
+# changeVolume
+# Source: https://wiki.archlinux.org/index.php/Dunst#Appearance
+
+# Arbitrary but unique message id
+msgId="991049"
+
+# Change the volume using alsa(might differ if you use pulseaudio)
+amixer -c 0 set Master "$@" > /dev/null
+
+# Query amixer for the current volume and whether or not the speaker is muted
+volume="$(amixer -c 0 get Master | tail -1 | awk '{print $4}' | sed 's/[^0-9]*//g')"
+mute="$(amixer -c 0 get Master | tail -1 | awk '{print $6}' | sed 's/[^a-z]*//g')"
+if [[ $volume == 0 || "$mute" == "off" ]]; then
+    # Show the sound muted notification
+    dunstify -a "changeVolume" -u low -i audio-volume-muted -r "$msgId" "Volume muted"
+else
+    # Show the volume notification
+    dunstify -a "changeVolume" -u low -i audio-volume-high -r "$msgId" \
+    "Volume: ${volume}%" "$(getProgressStringS 10 "<b> </b>" " " $volume)"
+fi
+    #+end_src
+
+    Helperscript.
+
+    #+begin_src shell  :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/getProgressStringS"
+# getProgressString <TOTAL ITEMS> <FILLED LOOK> <NOT FILLED LOOK> <STATUS>
+# For instance:
+# $ getProgressString 10 "#" "-" 50
+# #####-----
+# Note: if you want to use | in your progress bar string you need to change the delimiter in the sed commands
+# Source: https://github.com/Fabian-G/dotfiles/blob/master/scripts/bin/getProgressString
+
+ITEMS="$1" # The total number of items(the width of the bar)
+FILLED_ITEM="$2" # The look of a filled item
+NOT_FILLED_ITEM="$3" # The look of a not filled item
+STATUS="$4" # The current progress status in percent
+
+# calculate how many items need to be filled and not filled
+FILLED_ITEMS=$(echo "((${ITEMS} * ${STATUS})/100 + 0.5) / 1" | bc)
+NOT_FILLED_ITEMS=$(echo "$ITEMS - $FILLED_ITEMS" | bc)
+
+# Assemble the bar string
+msg=$(printf "%${FILLED_ITEMS}s" | sed "s| |${FILLED_ITEM}|g")
+msg=${msg}$(printf "%${NOT_FILLED_ITEMS}s" | sed "s| |${NOT_FILLED_ITEM}|g")
+echo "$msg"
+    #+end_src
+*** toggleTouchpadS
+    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/toggleTouchpadS"
+msgId="991050"
+device="$(xinput list | grep -P '(?<= )[\w\s:]*(?i)(touchpad|synaptics)(?-i).*?(?=\s*id)' -o | head -n1)"
+# If it was activated disable it and if it wasn't disable it
+if [[ "$(xinput list-props "$device" | grep -P ".*Device Enabled.*\K.(?=$)" -o)" == "1" ]];then
+    xinput disable "$device"
+    dunstify -a "changeVolume" -u low -i audio-volume-muted -r "$msgId" "Touchpad off"
+else
+    xinput enable "$device"
+    dunstify -a "changeVolume" -u low -i audio-volume-muted -r "$msgId" "Touchpad on"
+fi
+    #+end_src
+*** backlightS
+
+    Orig: [[https://github.com/Fabian-G/dotfiles/blob/master/scripts/bin/changeBrightness][Fabian-G]]
+
+    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/backlightS"
+msgId="981141"
+xbacklight -time 0 -steps 1 "$@"
+exactBrightness=$(xbacklight -get)
+brightness=$(echo "(${exactBrightness} + 0.5) / 1" | bc)
+dunstify -a "changeBrightness" -u low -i display-brightness-symbolic.symbolic -r "$msgId" \
+"Brightness: ${brightness}%" "$(getProgressStringS 10 " " " " $exactBrightness)"
+
+
+    #+end_src
+** Sysadmin scripts
+*** menuEditConfigsS
+    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/menuEditConfigsS"
+# Adapted from https://www.gitlab.com/dwt1/dotfiles/-/blob/master/.dmenu/dmenu-edit-configs.sh
+
+die() {
+    echo "Error: $@"
+    exit 1
+    }
+[ -z "$1" ] && die "This must be called with arguments"
+
+# Command line arguments
+MENU_CMD=$1
+EDITOR_CMD=$2
+
+# Options to pass to the menu program (list of config file names)
+options="alacritty
+zshrc
+zshenv
+zprofile
+aliases
+picom
+qutebrowser
+xmonad.hs
+Xresources
+quit"
+
+# Choose one of the files, using $MENU_CMD
+choice=`echo "$options" | $MENU_CMD "Edit config file: "`
+
+# Find the path to the chosen file
+case "$choice" in
+    alacritty)
+        file="$HOME/.config/alacritty/base.yml"
+    ;;
+    zshrc)
+        file="$ZDOTDIR/.zshrc"
+    ;;
+    zshenv)
+        file="$ZDOTDIR/.zshenv"
+    ;;
+    aliases)
+        file="$HOME/.config/shell/aliasrc"
+    ;;
+    picom)
+        file="$HOME/.config/picom/picom.conf"
+    ;;
+    zprofile)
+        file="$ZDOTDIR/.zprofile"
+    ;;
+    qutebrowser)
+        file="$HOME/.config/qutebrowser/config.py"
+    ;;
+    qutebrowser)
+        file="$HOME/.config/qutebrowser/config.py"
+    ;;
+    xmonad.hs)
+        file="$HOME/Projects/WS/ws.org"
+    ;;
+    ,*)
+        exit 1
+    ;;
+esac
+
+# Edit the chosen file, with the user-specified program
+$EDITOR_CMD "$file"
 
     #+end_src
 ** Screenshots
@@ -974,7 +1779,7 @@ shoot && notify
                                        , "--normal"   , "#AA8800"
                                        , "--high"     , "#FF0000"
                                        ] 50 -- every 5s
-                       , Run Com "myKb" [] "keyb" 50
+                       , Run Com "myKbS" [] "keyb" 50
                        , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc> <total>%"
                                 --, "--normal","#bbc2cf"
                                 , "-L", "40"
@@ -1027,4 +1832,5 @@ shoot && notify
 
 # Local Variables:
 # org-src-preserve-indentation: t
+# eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)
 # End:
