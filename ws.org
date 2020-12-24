@@ -93,27 +93,162 @@
 
    #+end_src
 
-* Header
 
-  #+begin_src haskell +n :tangle "~/.config/xmonad/app/Main.hs"
-    ---------------------------------------------------------------------------
-    --                                                                       --
-    --     _|      _|  _|      _|                                      _|    --
-    --       _|  _|    _|_|  _|_|    _|_|    _|_|_|      _|_|_|    _|_|_|    --
-    --         _|      _|  _|  _|  _|    _|  _|    _|  _|    _|  _|    _|    --
-    --       _|  _|    _|      _|  _|    _|  _|    _|  _|    _|  _|    _|    --
-    --     _|      _|  _|      _|    _|_|    _|    _|    _|_|_|    _|_|_|    --
-    --                                                                       --
-    ---------------------------------------------------------------------------
-    -- Alex <qwxlea@gmail.com>                                               --
-    -- https://github.com/qwxlea                                             --
-    ---------------------------------------------------------------------------
-    -- current as of XMonad 0.15
-    ---------------------------------------------------------------------------
-    module Main where
+* app/Main.hs
+  :PROPERTIES:
+  :header-args:  :tangle "~/.config/xmonad/app/Main.hs"
+  :END:
+
+** Header
+
+   #+begin_src haskell
+     ---------------------------------------------------------------------------
+     --                                                                       --
+     --     _|      _|  _|      _|                                      _|    --
+     --       _|  _|    _|_|  _|_|    _|_|    _|_|_|      _|_|_|    _|_|_|    --
+     --         _|      _|  _|  _|  _|    _|  _|    _|  _|    _|  _|    _|    --
+     --       _|  _|    _|      _|  _|    _|  _|    _|  _|    _|  _|    _|    --
+     --     _|      _|  _|      _|    _|_|    _|    _|    _|_|_|    _|_|_|    --
+     --                                                                       --
+     ---------------------------------------------------------------------------
+     -- Alex <qwxlea@gmail.com>                                               --
+     -- https://github.com/qwxlea                                             --
+     ---------------------------------------------------------------------------
+     -- current as of XMonad 0.15
+     ---------------------------------------------------------------------------
+     module Main where
+   #+end_src
+
+** Body
+   #+begin_src haskell +n
+     import XMonad                                   -- standard xmonad library
+     import XMonad.Config.Desktop                    -- default desktopConfig
+     import XMonad.Hooks.EwmhDesktops                -- Fixes the automatic fullscreening & wmctrl
+     import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
+     import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
+
+     import Options
+     import MyKeys
+     import MyCheatsheet
+     import MyBar
+     import MyLayoutHook
+     import MyManageHook
+
+     -- My workspaces are currently just numbers
+     myWorkspaces :: [String]
+     myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
+
+     main :: IO ()
+     main = do
+         barProc <- spawnBarWithHandle  -- Start myBar and return a handle
+         spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
+
+         -- Applies this config file over the default config for desktop use
+         xmonad
+             -- Increased compliance with the Extended Window Manager Hints standard
+             $ ewmh
+             -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
+             $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
+             $ myConfig barProc
+
+     myConfig barProc = desktopConfig
+             { modMask            = myModMask
+             , terminal           = myTerminal
+             , borderWidth        = myBorderWidth
+             , normalBorderColor  = myNormalBorderColour
+             , focusedBorderColor = myFocusedBorderColour
+             , manageHook         = myManageHook
+             , layoutHook         = myLayoutHook
+             , logHook            = myLogHook barProc
+             , workspaces         = myWorkspaces
+             , startupHook        = do spawnOnce myBarAutostart
+                                       spawnOnce myAutostart
+             }
+   #+end_src
+
+* src/Options.hs
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/Options.hs"
+  :END:
+
+  #+begin_src haskell
+    module Options where
+
+    import XMonad
+
+    -- The modifier key to be used for most keybindings
+    -- I have it set to super (the Windows key)
+    myModMask :: KeyMask
+    myModMask  = mod4Mask
   #+end_src
 
-* MyKeys
+  Default applications, scripts end with a capital /S/, like =screenshotS=.
+
+  #+begin_src haskell -n
+    ---------------------------------------------------------------------------
+    -- Applications                                                         ---
+    ---------------------------------------------------------------------------
+
+    myTerminal       = "alacritty"
+    myEditor         = myTerminal ++ " -e nvim "
+    myBrowser        = "qutebrowser"
+    myFileManager    = myTerminal ++ " -e ranger "
+    myGuiFileManager = "pcmanfm"
+    myPdfReader      = "zathura"
+    myPrintScreen    = "screenshotS"
+
+    data Bar = Taffybar | XMobar | Tint2 deriving (Eq)
+    myBar :: Bar
+    myBar = XMobar
+
+    myMenu :: String
+    myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
+  #+end_src
+
+  Default file paths.
+
+  #+begin_src haskell -n
+    ---------------------------------------------------------------------------
+    -- File Paths                                                           ---
+    ---------------------------------------------------------------------------
+
+    myConfigDir       = "~/.config/xmonad/src/"       -- XMonad-related config
+    myBuildScript     = "~/.config/xmonad/build"      -- Script to recompile and restart xmonad
+    myAutostart       = "~/.config/xmonad/src/autostart.sh" -- Script to run on login
+    myXMobarConf      = "~/.config/xmobar/xmobarrc.hs"
+    myStalonetrayConf = "~/.config/stalonetray/stalonetrayrc"
+    myTint2Conf       = "~/.config/tint2/xmonad.tint2rc"
+
+  #+end_src
+
+  Theme; colors, fonts etc
+
+  #+begin_src haskell
+    ---------------------------------------------------------------------------
+    -- Theme                                                               ---
+    ---------------------------------------------------------------------------
+
+    myFont = "xft:Ubuntu Nerd Font:size=10"
+    rofiTheme theme = "~/.config/rofi/themes/" ++ theme ++ ".rasi" -- Rofi theme directory
+
+    myBorderWidth :: Dimension
+    myBorderWidth = 2
+
+    myNormalBorderColour, myFocusedBorderColour :: String
+    myNormalBorderColour = "#111111"
+    myFocusedBorderColour = "#268bd2"
+
+    -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
+    myTabActiveColour      = "#46D9FF"
+    myTabInactiveColour       = "#313846"
+    myTabActiveBorderColour   = "#46D9FF"
+    myTabInactiveBorderColour = "#282C34"
+    myTabActiveTextColour     = "#282C34"
+    myTabInactiveTextColour   = "#D0D0D0"
+
+  #+end_src
+
+* src/MyKeys.hs
 
   #+begin_src haskell :tangle "~/.config/xmonad/src/MyKeys.hs"
     module MyKeys
@@ -253,129 +388,7 @@
 
   #+end_src
 
-* Main
-
-  #+begin_src haskell +n :tangle "~/.config/xmonad/app/Main.hs"
-    import XMonad                             -- standard xmonad library
-    import XMonad.Config.Desktop              -- default desktopConfig
-    import XMonad.Hooks.EwmhDesktops          -- Fixes the automatic fullscreening of applications
-    import XMonad.Util.NamedActions (addDescrKeys')
-    import XMonad.Util.SpawnOnce (spawnOnce)  -- For running autostart only once (on login)
-
-    import Options
-    import MyKeys
-    import MyCheatsheet
-    import MyBar
-    import MyLayoutHook
-    import MyManageHook
-
-    -- I want to figure out how window decorations work, but my Haskell is not yet good enough
-    --import XMonad.Layout.Decoration
-    --import XMonad.Util.Types
-    --import SideDecoration
-
-    --mySideDecorationTheme :: Theme
-    --mySideDecorationTheme = def
-    --mySideDecorate :: Eq a => l a -> ModifiedLayout (Decoration SideDecoration DefaultShrinker) l a
-    --mySideDecorate = decoration shrinkText mySideDecorationTheme (SideDecoration L)
-
-    -- My workspaces are currently just numbers
-    myWorkspaces :: [String]
-    myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
-
-    main :: IO ()
-    main = do
-        barProc <- spawnBarWithHandle  -- Start myBar and return a handle
-        spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
-
-        -- Applies this config file over the default config for desktop use
-        xmonad
-            -- Increased compliance with the Extended Window Manager Hints standard
-            $ ewmh
-            -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
-            $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
-            $ myConfig barProc
-
-    myConfig barProc = desktopConfig
-            { modMask            = myModMask
-            , terminal           = myTerminal
-            , borderWidth        = myBorderWidth
-            , normalBorderColor  = myNormalBorderColour
-            , focusedBorderColor = myFocusedBorderColour
-            , manageHook         = myManageHook
-            , layoutHook         = myLayoutHook
-            , logHook            = myLogHook barProc
-            , workspaces         = myWorkspaces
-            , startupHook        = do spawnOnce myBarAutostart
-                                      spawnOnce myAutostart
-            }
-
-  #+end_src
-
-* Options
-
-  #+begin_src haskell  :tangle "~/.config/xmonad/src/Options.hs"
-    module Options where
-
-    import XMonad
-
-    -- The modifier key to be used for most keybindings
-    -- I have it set to super (the Windows key)
-    myModMask :: KeyMask
-    myModMask  = mod4Mask
-
-    --------------------------------------------------------------------------------
-    -- APPLICATIONS
-
-    myTerminal       = "alacritty"
-    myEditor         = myTerminal ++ " -e nvim "
-    myBrowser        = "qutebrowser"
-    myFileManager    = myTerminal ++ " -e ranger "
-    myGuiFileManager = "pcmanfm"
-    myPdfReader      = "zathura"
-    myPrintScreen    = "spectacle"
-
-    data Bar = Taffybar | XMobar | Tint2 deriving (Eq)
-    myBar :: Bar
-    myBar = XMobar
-
-    myMenu :: String
-    myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
-
-    --------------------------------------------------------------------------------
-    -- FILEPATHS
-
-    myConfigDir       = "~/.config/xmonad/src/"       -- XMonad-related config
-    myBuildScript     = "~/.config/xmonad/build"      -- Script to recompile and restart xmonad
-    myAutostart       = "~/.config/xmonad/src/autostart.sh" -- Script to run on login
-    myXMobarConf      = "~/.config/xmobar/xmobarrc.hs"
-    myStalonetrayConf = "~/.config/stalonetray/stalonetrayrc"
-    myTint2Conf       = "~/.config/tint2/xmonad.tint2rc"
-
-    --------------------------------------------------------------------------------
-    -- THEME
-
-    myFont = "xft:Ubuntu Nerd Font:size=10"
-    rofiTheme theme = "~/.config/rofi/themes/" ++ theme ++ ".rasi" -- Rofi theme directory
-
-    myBorderWidth :: Dimension
-    myBorderWidth = 2
-
-    myNormalBorderColour, myFocusedBorderColour :: String
-    myNormalBorderColour = "#111111"
-    myFocusedBorderColour = "#268bd2"
-
-    -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
-    myTabActiveColour      = "#46D9FF"
-    myTabInactiveColour       = "#313846"
-    myTabActiveBorderColour   = "#46D9FF"
-    myTabInactiveBorderColour = "#282C34"
-    myTabActiveTextColour     = "#282C34"
-    myTabInactiveTextColour   = "#D0D0D0"
-
-  #+end_src
-
-* MyBar
+* src/MyBar
 
   #+begin_src haskell  :tangle "~/.config/xmonad/src/MyBar.hs"
 module MyBar
@@ -434,7 +447,7 @@ myLogHook barProc
     | otherwise       = def  -- Outputting an unread log can crash XMonad
 
   #+end_src
-* MyLayoutHook
+* src/MyLayoutHook.hs
 
   #+begin_src haskell  :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
     {-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
@@ -496,7 +509,7 @@ myLogHook barProc
 
   #+end_src
 
-* MyManageHook
+* src/MyManageHook.hs
 
   #+begin_src haskell  :tangle "~/.config/xmonad/src/MyManageHook.hs"
 module MyManageHook
