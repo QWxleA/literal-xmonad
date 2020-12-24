@@ -189,7 +189,7 @@
     ---------------------------------------------------------------------------
 
     myTerminal       = "alacritty"
-    myEditor         = myTerminal ++ " -e nvim "
+    myEditor         = "emacsclient -c"
     myBrowser        = "qutebrowser"
     myFileManager    = myTerminal ++ " -e ranger "
     myGuiFileManager = "pcmanfm"
@@ -202,6 +202,10 @@
 
     myMenu :: String
     myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
+
+    myAppM :: String
+    myAppM = "rofi -show drun"    -- Start software
+
   #+end_src
 
   Default file paths.
@@ -213,7 +217,7 @@
 
     myConfigDir       = "~/.config/xmonad/src/"       -- XMonad-related config
     myBuildScript     = "~/.config/xmonad/build"      -- Script to recompile and restart xmonad
-    myAutostart       = "~/.config/xmonad/src/autostart.sh" -- Script to run on login
+    myAutostart       = "~/.config/xmonad/src/autostartS" -- Script to run on login
     myXMobarConf      = "~/.config/xmobar/xmobarrc.hs"
     myStalonetrayConf = "~/.config/stalonetray/stalonetrayrc"
     myTint2Conf       = "~/.config/tint2/xmonad.tint2rc"
@@ -326,7 +330,7 @@
         subKeys "Core"
         [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ io exitSuccess)
         , ("M-q",                     addName "Recompile & restart"    $ spawn myBuildScript)
-        , ("C-<Escape>",              addName "Application launcher"   $ spawn "appmenu")
+        , ("C-<Escape>",              addName "Application launcher"   $ spawn myAppM)
         , ("M-S-c",                   addName "Close window"           $ kill)
         ] ^++^
 
@@ -389,6 +393,7 @@
         subKeys "Applications"
         [ ("M-S-<Return>",            addName "Terminal emulator"      $ spawn myTerminal)
         , ("M3-<Return>",             addName "Terminal emulator"      $ spawn myTerminal)
+        , ("M3-d",                    addName "Start apps (I3 dmenu)"  $ spawn myAppM)
         , ("M3-e",                    addName "Text editor"            $ spawn myEditor)
         , ("M3-w",                    addName "Web browser (minimal)"  $ spawn myBrowser)
         , ("M3-S-w",                  addName "Firefox"                $ spawn "firefox")
@@ -398,10 +403,10 @@
         ] ^++^
 
         subKeys "My Scripts"
-        [ ("M-p M-p",                 addName "Edit scripts"           $ menuEditScript)
-        , ("M-p M-e",                 addName "Edit configs"           $ menuEditConfig)
-        , ("M-p M-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
-        , ("M-p M-z",                 addName "Read PDF file"          $ menuReadPdf)
+        [ ("M3-p M-p",                 addName "Edit scripts"           $ menuEditScript)
+        , ("M3-p M-e",                 addName "Edit configs"           $ menuEditConfig)
+        , ("M3-p M-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
+        , ("M3-p M-z",                 addName "Read PDF file"          $ menuReadPdf)
         ] ^++^
 
         subKeys "Multimedia Keys"
@@ -415,7 +420,8 @@
         , ("C-<F3>",                  addName "Increase volume"        $ volumeAdjust "+ 5%")
         , ("C-<F11>",                 addName "Decrease brightness"    $ brightnessAdjust "-dec 10")
         , ("C-<F12>",                 addName "Increase brightness"    $ brightnessAdjust "-inc 10")
-        , ("<Print>",                 addName "Take screenshot"        $ spawn myPrintScreen)
+        , ("<Print>",                 addName "Take screenshot"        $ spawn (myPrintScreen ++ " -n"))
+        , ("S-<Print>",               addName "Take screenshot menu"   $ spawn myPrintScreen)
         ]
 
   #+end_src
@@ -772,9 +778,52 @@
 
   #+end_src
 * External scripts
+** (Xmonad) pre-startup script
+   Still haven't figured out what's best. Atm I use .xinitrc for most of this.
+
+   #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostartS"
+     # Desktop
+     wallpaper
+
+     if [ -z "$(pgrep unclutter)" ] ; then
+         unclutter --timeout 4 --jitter 10 --ignore-scrolling -b
+     fi
+
+     if [ -z "$(pgrep dunst)" ] ; then
+         dunst &
+     fi
+
+     if [ -z "$(pgrep picom)" ] ; then
+         picom &
+     fi
+
+     if [ -z "$(pgrep redshift)" ] ; then
+         redshift &
+     fi
+
+     # Daemons
+     #emacs --daemon & Started with systemd
+     #udiskie &
+     #nm-applet --indicator &
+     #lxqt-powermanagement &
+
+     # Settings
+     xrdb -merge "$HOME/.config/X11/Xresources" &
+     #xmodmap -e 'add mod3 = Menu'
+     #xmodmap -e "keycode 135 = Hyper_R"
+     #xmodmap -e "add mod3 = Hyper_R"
+     #xmodmap -e "keycode any = Menu" # this is needed for xcape
+     #xcape -e "Hyper_R=Menu" # for single key press on menu key
+     setxkbmap -model pc105 -layout us,ru -variant ,phonetic -option grp:shifts_toggle -option ctrl:nocaps # -option compose:menu
+     xmodmap ~/.config/X11/Xmodmap
+
+     xsetroot -grey -cursor_name left_ptr &
+
+   #+end_src
+
+   #+RESULTS:
 
 ** WM scripts
-
 *** Keyboard indicator Mobar
     #+begin_src  shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKb"
       stdlayout=us  # standard layout takes "default" color
@@ -807,7 +856,6 @@
       echo "<fc=$color><fn=1>$icon</fn> ${name}</fc>"
     #+end_src
 
-
 *** Xprop wrapper - xmonprop
 
     Source: [[https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_need_to_find_the_class_title_or_some_other_X_property_of_my_program][Haskell wiki]]
@@ -822,55 +870,6 @@
         ${1+"$@"}
 
     #+end_src
-** Startup
-   Still haven't figured out what's best. Atm I use .xinitrc for most of this.
-
-   #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostart.sh"
-     # Desktop
-     wallpaper
-
-     if [ -z "$(pgrep unclutter)" ] ; then
-         "unclutter --timeout 4 --jitter 10 --ignore-scrolling -b"
-     fi
-
-     if [ -z "$(pgrep dunst)" ] ; then
-         dunst &
-     fi
-
-     if [ -z "$(pgrep picom)" ] ; then
-         picom &
-     fi
-
-     if [ -z "$(pgrep redshift)" ] ; then
-         redshift &
-     fi
-
-     if [ -z "$(pgrep emacs)" ] ; then
-         /usr/bin/emacs --daemon &
-     fi
-
-     # Daemons
-     #emacs --daemon &
-     #udiskie &
-     #nm-applet --indicator &
-     #lxqt-powermanagement &
-
-     # Settings
-     xrdb -merge "$HOME/.config/X11/Xresources" &
-     #xmodmap -e 'add mod3 = Menu'
-     #xmodmap -e "keycode 135 = Hyper_R"
-     #xmodmap -e "add mod3 = Hyper_R"
-     #xmodmap -e "keycode any = Menu" # this is needed for xcape
-     #xcape -e "Hyper_R=Menu" # for single key press on menu key
-     setxkbmap -model pc105 -layout us,ru -variant ,phonetic -option grp:shifts_toggle -option ctrl:nocaps # -option compose:menu
-     xmodmap ~/.config/X11/Xmodmap
-
-     xsetroot -grey -cursor_name left_ptr &
-
-   #+end_src
-
-   #+RESULTS:
-
 ** Screenshots
 
    # Recording
@@ -881,75 +880,71 @@
    super + Delete
    dmenurecord kill
 
-   #+begin_src shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/screenshot"
-     APP="maim"
-     LOCATION="$HOME/Pictures/Screenshots"
-     FNAME="screenshot-$(date '+%Y-%m-%d-%H:%M:%S').png"
-     CHOICE="Fullscreen"
+   #+begin_src shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/screenshotS"
+APP="maim"
+LOCATION="$HOME/Pictures/Screenshots"
+FNAME="screenshot-$(date '+%Y-%m-%d-%H:%M:%S').png"
+TARGET="$LOCATION/$FNAME"
+SMALL="/tmp/$FNAME.tmp"
+CHOICE="Fullscreen"
 
-     mkdir -p "$LOCATION"
+mkdir -p "$LOCATION"
 
-     shoot() {
-         CHOICE=$(printf "a selected area\\ncurrent window\\nfull screen\\na selected area (copy)\\ncurrent window (copy)\\nfull screen (copy)" | dmenu -l 6 -i -p "Screenshot which area?")
+shoot() {
+    CHOICE=$(printf "Selected area\\nCurrent window\\nFull screen\\nSelected area (copy)\\nCurrent window (copy)\\nFll screen (copy)" | rofi -dmenu -l 6 -i -p "Screenshot which area?")
 
-         case "$CHOICE" in
+    case "$CHOICE" in
 
-             "a selected area")
-                 maim -s  "$TARGET" ;;
-             "current window")
-                 maim -i "$(xdotool getactivewindow)"  "$TARGET" ;;
-             "full screen")
-                 maim  "$TARGET" ;;
-             "a selected area (copy)")
-                 maim -s | xclip -selection clipboard -t image/png ;;
-             "current window (copy)")
-                 maim -i "$(xdotool getactivewindow)" | xclip -selection clipboard -t image/png ;;
-             "full screen (copy)")
-                 maim | xclip -selection clipboard -t image/png ;;
-         esac
-     }
+        "Selected area")
+            maim -s "$TARGET" ;;
+        "Current window")
+            maim -i "$(xdotool getactivewindow)"  "$TARGET" ;;
+        "Full screen")
+            sleep 0.5 && maim  "$TARGET" #Don't want the menu
+            ;;
+        "Selected area (copy)")
+            maim -s |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
+        "Current window (copy)")
+            maim -i "$(xdotool getactivewindow)" |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
+        "Full screen (copy)")
+            sleep 0.5 && maim |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
+    esac
+}
 
-     notify() {
+notify() {
+    convert "$TARGET" -resize 128x128  "$SMALL"
+    notify-send "$CHOICE" "screen-\nshot" -i "$SMALL"
+    rm "$SMALL"
+}
 
-         convert "$TARGET" -resize 128x128  "$SMALL"
-         notify-send "$CHOICE" "screen-\nshot" -i "$SMALL"
-         rm "$SMALL"
-
-     }
-
-     usage() {
-         cat <<EOF
+usage() {
+    cat <<-EOF
      $(basename $0) -h -n
      -h this message
      -n screenshot
       If you use the script with -n, you get a fullscreen screenshot,
-     otherwise dmenu offers:
-      - a selected area
-     - current window
-     - full screen
-     - a selected area (copy)
-     - current window (copy)
-     - full screen (copy)
-     EOF
-         exit
-     }
+     otherwise:
+     - Selected area
+     - Current window
+     - Full screen
+     - Selected area (copy)
+     - Current window (copy)
+     - Full screen (copy)
+EOF
+    exit
+}
 
-     TARGET="$LOCATION/$FNAME"
-     SMALL="/tmp/$(basename "$TARGET").tmp"
+while getopts "hn" opt; do
+    case $opt in
+        n)
+            $APP "$TARGET" && notify
+            exit
+            ;;
+        ,*) usage ;;
+    esac
+done
 
-     while getopts "hn" opt; do
-         case $opt in
-             n)
-                 $APP "$TARGET"
-                 notify
-                 exit
-                 ;;
-             ,*) usage ;;
-         esac
-     done
-
-     shoot
-     notify
+shoot && notify
    #+end_src
 
 * Xmobar
