@@ -1092,16 +1092,37 @@ zoomFloat = doFloatDep move
   projects :: [Project]
   projects =
     [ Project
-      { projectName = "scratch",
-        projectDirectory = "~/Desktop",
-        projectStartHook = Nothing
-      },
-      Project
       { projectName = "browsers",
         projectDirectory = "~/Downloads",
         projectStartHook = Just $ do
           sendMessage (JumpToLayout "Tall")
           spawn "qutebrowser"
+      },
+      Project
+      { projectName = "emacs",
+        projectDirectory = "~/",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "emacsclient -c"
+      },
+      Project
+      { projectName = "xmonad",
+        projectDirectory = "~/Projects/WS",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "alacritty"
+      },
+      Project
+      { projectName = "term",
+        projectDirectory = "~/",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "alacritty"
+      },
+      Project
+      { projectName = "scratch",
+        projectDirectory = "~/Desktop",
+        projectStartHook = Nothing
       },
       Project
       { projectName = "chat",
