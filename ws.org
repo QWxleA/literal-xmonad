@@ -139,9 +139,9 @@
 
 
      import XMonad.Util.Run(spawnPipe)               -- For xmobar
-     import XMonad.Hooks.DynamicLog
-     import XMonad.Util.NamedScratchpad(namedScratchpadFilterOutWorkspacePP)
-     import System.IO(hPutStrLn)
+     -- import XMonad.Hooks.DynamicLog
+     -- import XMonad.Util.NamedScratchpad(namedScratchpadFilterOutWorkspacePP)
+     -- import System.IO(hPutStrLn)
 
      import XMonad.Actions.DynamicProjects
 
@@ -179,8 +179,16 @@
              , focusedBorderColor = myFocusedBorderColour
              , manageHook         = myManageHook
              , layoutHook         = myLayoutHook
-             , logHook            = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP  -- (ref:namsH)
-                      { ppOutput          = hPutStrLn xmproc
+             , logHook            = myLogHook xmproc
+             , workspaces         = WS.names
+             , startupHook        = do
+                 spawnOnce myAutostart
+                 spawnOnce myBarAutostart
+             }
+   #+end_src
+         myLogHook :: Handle -> X ()
+         myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
+                      { ppOutput          = hPutStrLn h
                       , ppCurrent         = xmobarColor active "" . wrap "[" "]"
                       , ppTitle           = xmobarColor active "" . shorten 50
                       , ppVisible         = xmobarColor base0  "" . wrap "(" ")"
@@ -191,14 +199,9 @@
                       , ppLayout          = xmobarColor yellow ""
                       , ppOrder           = id
                       }
+   #+begin_src haskell -n
 
-             , workspaces         = WS.names
-             , startupHook        = do
-                 spawnOnce myAutostart
-                 spawnOnce myBarAutostart
-             }
    #+end_src
-
 * src/Options.hs
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/Options.hs"
