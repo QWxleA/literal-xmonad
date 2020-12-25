@@ -135,10 +135,7 @@
      import MyBar
      import MyLayoutHook
      import MyManageHook (myManageHook)
-
-     -- My workspaces are currently just numbers
-     myWorkspaces :: [String]
-     myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
+     import MyWorkspaces as WS
 
      main :: IO ()
      main = do
@@ -162,7 +159,7 @@
              , manageHook         = myManageHook
              , layoutHook         = myLayoutHook
              , logHook            = myLogHook barProc
-             , workspaces         = myWorkspaces
+             , workspaces         = WS.names
              , startupHook        = do spawnOnce myBarAutostart
                                        spawnOnce myAutostart
              }
@@ -599,7 +596,7 @@
     -- Other processes that need to run, depending on the bar
     myBarAutostart :: String
     myBarAutostart
-        | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
+        -- | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
         | myBar == Tint2    = "tint2 -c "             ++ myTint2Conf
         | myBar == Taffybar = "taffybar"
 
@@ -634,6 +631,19 @@
         | otherwise       = def  -- Outputting an unread log can crash XMonad
 
   #+end_src
+
+  #+begin_example haskell
+, ppLayout = (\ x -> case x of
+"tall"               -> "<fc=green><fn=1>\xf00b</fn></fc>" -- th-list
+"magnify"            -> "<fc=green><fn=1>\xf00e</fn></fc>" -- search-plus
+"monocle"            -> "<fc=green><fn=1>\xf06e</fn></fc>" -- eye
+"tabs"               -> "<fc=green><fn=1>\xf0db</fn></fc>" -- columns
+"grid"               -> "<fc=green><fn=1>\xf009</fn></fc>" -- th-grid
+"floats"             -> "<fc=green><fn=1>\xf0c2</fn></fc>" -- cloud
+"full"               -> "<fn=0><fc=green>Full</fn></fc>"
+_                    -> x )
+  #+end_example
+
 * src/MyLayoutHook.hs
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
@@ -658,6 +668,8 @@
     import XMonad.Layout.Spacing
     import XMonad.Layout.Tabbed
     import XMonad.Layout.ThreeColumns
+
+    import XMonad.Layout.ShowWName
 
     import Options
 
@@ -700,7 +712,17 @@
           $ avoidStruts
           $ tabbed shrinkText myTabConfig
 
+
+    myShowWNameTheme :: SWNConfig
+    myShowWNameTheme = def
+        { swn_font              = myMediumFont
+        , swn_fade              = 1.0
+        , swn_bgcolor           = base03
+        , swn_color             = base3
+        }
+
     myLayoutHook = smartBorders
+                 $ showWName'  myShowWNameTheme
                  $ avoidStruts
     --           $ mySideDecorate  -- Messes up everything - I don't yet understand why
                  $ mkToggle (single NBFULL)
@@ -1041,6 +1063,99 @@ zoomFloat = doFloatDep move
                      w = 0.9
                      t = 0.95 -h
                      l = 0.95 -w
+  #+end_src
+* src/MyWorkspaces
+  :PROPERTIES:
+  :header-args:  :tangle "~/.config/xmonad/src/MyWorkspaces.hs"
+  :END:
+
+  #+begin_src haskell -n
+  module MyWorkspaces
+    ( -- projects,
+      -- terminal,
+      names
+      -- scratchPads,
+      -- asKey,
+      -- viewPrevWS,
+    )
+  where
+
+  import XMonad
+  import XMonad.Actions.DynamicProjects
+  import XMonad.Layout.LayoutCombinators (JumpToLayout (..))
+
+  #+end_src
+
+    Workspaces:
+
+  #+begin_src haskell -n
+  projects :: [Project]
+  projects =
+    [ Project
+      { projectName = "scratch",
+        projectDirectory = "~/Desktop",
+        projectStartHook = Nothing
+      },
+      Project
+      { projectName = "browsers",
+        projectDirectory = "~/Downloads",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "qutebrowser"
+      },
+      Project
+      { projectName = "chat",
+        projectDirectory = "~/Downloads",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "alacritty -e tmux attach"
+          spawn "alacritty"
+      },
+      Project
+      { projectName = "docs",
+        projectDirectory = "~/Documents/",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")
+          spawn "alacritty"
+      },
+      Project
+      { projectName = "tv",
+        projectDirectory = "~/Video",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Padded")
+          spawn "alaritty -e ranger"
+      }
+    ]
+
+  -- | Names of my workspaces.
+  names :: [WorkspaceId]
+  names = map projectName projects
+
+  #+end_src
+
+  #+begin_src haskell -n :tangle no
+     -- wsWEB     = "web"
+     -- wsTXT     = "txt"
+     -- wsTRM     = "term"
+     -- wsSYS     = "sys"
+     -- wsCHT     = "chat"
+     -- wsFLT     = "flot"
+     -- wsMOV     = "movies"
+     -- wsTMP     = "tmp"
+     -- wsPythonP = "Python"
+     -- wsXmonadP = "Xmonad"
+     -- wsKBorgP  = "KBorg"
+     -- wsHaskell = "haskell"
+     -- wsQWEB    = "qweb"
+
+     -- myWorkspaces = [wsWEB, wsTXT, wsTRM, wsSYS, wsCHT, wsFLT, wsMOV, wsTMP]
+
+     -- myWorkspaces :: [String]
+     -- myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
+
+     names :: [String]
+     names = ["Web","2","3","4","5","6","7","8","9"]
+
   #+end_src
 * External scripts
 ** (Xmonad) pre-startup script
