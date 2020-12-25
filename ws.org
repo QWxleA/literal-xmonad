@@ -137,6 +137,12 @@
      import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
      import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
 
+
+     import XMonad.Util.Run(spawnPipe)               -- For xmobar
+     import XMonad.Hooks.DynamicLog
+     import XMonad.Util.NamedScratchpad(namedScratchpadFilterOutWorkspacePP)
+     import System.IO(hPutStrLn)
+
      import XMonad.Actions.DynamicProjects
 
      import Options
@@ -149,22 +155,23 @@
 
    #+end_src
 
+   Main:
+
    #+begin_src haskell +n
      main :: IO ()
      main = do
-         barProc <- spawnBarWithHandle  -- Start myBar and return a handle
-         spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
+         xmproc <- spawnPipe "xmobar ~/.config/xmobar/xmobarrc.hs"
+         -- barProc <- spawnBarWithHandle  -- Start myBar and return a handle
+         -- spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
 
          -- Applies this config file over the default config for desktop use
          xmonad
              -- Increased compliance with the Extended Window Manager Hints standard
-             $ ewmh
+             -- $ ewmh
              $ dynamicProjects WS.projects
              -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
              $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
-             $ myConfig barProc
-
-     myConfig barProc = desktopConfig
+             $ ewmh desktopConfig
              { modMask            = myModMask
              , terminal           = myTerminal
              , borderWidth        = myBorderWidth
@@ -172,7 +179,19 @@
              , focusedBorderColor = myFocusedBorderColour
              , manageHook         = myManageHook
              , layoutHook         = myLayoutHook
-             , logHook            = myLogHook barProc
+             , logHook            = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP  -- (ref:namsH)
+                      { ppOutput          = hPutStrLn xmproc
+                      , ppCurrent         = xmobarColor active "" . wrap "[" "]"
+                      , ppTitle           = xmobarColor active "" . shorten 50
+                      , ppVisible         = xmobarColor base0  "" . wrap "(" ")"
+                      , ppUrgent          = xmobarColor red    "" . wrap " " " "
+                      , ppHiddenNoWindows = const ""
+                      , ppSep             = xmobarColor red myNormalBorderColor " : "
+                      , ppWsSep           = " "
+                      , ppLayout          = xmobarColor yellow ""
+                      , ppOrder           = id
+                      }
+
              , workspaces         = WS.names
              , startupHook        = do
                  spawnOnce myAutostart
