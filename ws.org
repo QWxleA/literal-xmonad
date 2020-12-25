@@ -5,17 +5,26 @@
 #+title:
 #+date: <2020-12-24 Thu>
 #+PROPERTY: header-args  :mkdirp yes
+#+HTML_HEAD: <link href="theme.css" rel="stylesheet">
 
 * Build Xmonad
 
-  - stack init  :
-  - stack build :
-  - stck install:
+  Install dependencies:
 
+  #+begin_example shell
+  sudo pacman -S stack
+  #+end_example
+
+  - stack init  :  Create stack project config from cabal or hpack package specifications
+  - stack build :  Build the package(s) in this directory/configuration
+  - stack install: Shortcut for 'build --copy-bins'
+
+  #+CAPTION: Xmonad build script
   #+begin_src sh :tangle-mode (identity #o555) :tangle "~/.config/xmonad/build" :mkdirp yes
     #!/bin/sh
     #
     # As of 0.13, xmonad --recompile will look for a custom build script.
+    # Keep & after notify-send, if dunst is not running the process will hang
     #set -e
 
     EXEC_PATH="$1"
@@ -27,7 +36,7 @@
         echo "Xmonad build FAILED! $1"
         exit 1
         }
-    #rm -rf ~/.xmonad #carefull!!
+
     cd ~/.config/xmonad
     notify-send "Xmonad" "Build started ($1)" -i "$ICON" &
     #stack build || stack init
@@ -36,10 +45,11 @@
     xmonad --restart && notify-send "Xmonad build SUCCES!" "Restarted at $(date)" -i "$ICON" &
   #+end_src
 
-  Fitspec is needed for the cheatsheet.
+  *Note:* Fitspec is needed for the cheatsheet.
 
-  #+begin_src yaml :tangle "~/.config/xmonad/package.yaml"
+  #+begin_src yaml1 :tangle "~/.config/xmonad/package.yaml" :noweb tangle
     name: myXmonad
+    version: 0.0.7
 
     dependencies:
         - base
@@ -62,45 +72,6 @@
                 - -with-rtsopts=-N
                 - -Wall
   #+end_src
-** COMMENT Build scripts old
-
-   #+begin_src shell
- #!/bin/env sh
-
- EXEC_PATH="$1"
-
- cd .config/xmonad
- stack install
- ln -sf ~/.local/bin/xmonad $EXEC_PATH
- xmonad --restart
-
-   #+end_src
-
-   #+begin_src yaml
- name: myXmonad
-
- dependencies:
-     - base
-     - xmonad
-     - xmonad-contrib
-     - split
-     - fitspec
-
- library:
-     source-dirs: src
-
- executables:
-     xmonad:
-         source-dirs:  app
-         main:         Main.hs
-         dependencies: myXmonad
-         ghc-options:
-             - -threaded
-             - -rtsopts
-             - -with-rtsopts=-N
-             - -Wall
-
-   #+end_src
 
 * app/Main.hs
   :PROPERTIES:
@@ -128,7 +99,8 @@
    #+end_src
 
 ** Body
-   Imports:
+
+   Imports for app/Main.hs:
 
    #+begin_src haskell -n
      import XMonad                                   -- standard xmonad library
@@ -137,20 +109,20 @@
      import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
      import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
 
-     import XMonad.Actions.DynamicProjects
+     import XMonad.Actions.DynamicProjects           -- For WS.projects
      import XMonad.Util.Run(spawnPipe)               -- For xmobar src/MyBar
 
-     import Options
+     import Options                                  -- All stored under /src/
      import MyKeys
      import MyCheatsheet
      import MyBar
      import MyLayoutHook
-     import MyManageHook (myManageHook)
+     import MyManageHook
      import MyWorkspaces as WS
 
    #+end_src
 
-   Main:
+   main function, high ho, silver!:
 
    #+begin_src haskell +n
      main :: IO ()
@@ -158,25 +130,21 @@
          xmproc <- spawnPipe "xmobar ~/.config/xmobar/xmobarrc.hs"
          -- xmproc <- spawnPipe "xmobar ~/.config/xmobar/xmobarDebug.hs"
 
-         -- Applies this config file over the default config for desktop use
-         xmonad
-             -- Increased compliance with the Extended Window Manager Hints standard
-             -- $ ewmh
-             $ dynamicProjects WS.projects
-             -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
-             $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
-             $ ewmh desktopConfig
-             { modMask            = myModMask
-             , terminal           = myTerminal
-             , borderWidth        = myBorderWidth
-             , normalBorderColor  = myNormalBorderColour
-             , focusedBorderColor = myFocusedBorderColour
-             , manageHook         = myManageHook
-             , layoutHook         = myLayoutHook
-             , logHook            = myLogHook xmproc
-             , workspaces         = WS.names
-             , startupHook        = spawnOnce myAutostart
-             }
+         xmonad                                                        -- applied over defaults
+             $ dynamicProjects WS.projects                             -- See MyWorkspaces
+             $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys    -- See myCheatsheet
+             $ ewmh desktopConfig                                      -- xdotool and wmtrl are great!
+               { modMask            = myModMask
+               , terminal           = myTerminal
+               , borderWidth        = myBorderWidth
+               , normalBorderColor  = myNormalBorderColor
+               , focusedBorderColor = myFocusedBorderColor
+               , manageHook         = myManageHook
+               , layoutHook         = myLayoutHook
+               , logHook            = myLogHook xmproc
+               , workspaces         = WS.names
+               , startupHook        = spawnOnce myAutostart
+               }
 
    #+end_src
 
@@ -184,6 +152,8 @@
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/Options.hs"
   :END:
+
+  The idea is to set up all the defaults here, instead all over the place. So far my success has been limited.
 
   #+begin_src haskell
     module Options where
@@ -253,17 +223,15 @@
     myBorderWidth :: Dimension
     myBorderWidth = 2
 
-    myNormalBorderColour, myFocusedBorderColour :: String
-    myNormalBorderColour = "#111111"
-    myFocusedBorderColour = "#268bd2"
+
 
     -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
-    myTabActiveColour      = "#46D9FF"
-    myTabInactiveColour       = "#313846"
-    myTabActiveBorderColour   = "#46D9FF"
-    myTabInactiveBorderColour = "#282C34"
-    myTabActiveTextColour     = "#282C34"
-    myTabInactiveTextColour   = "#D0D0D0"
+    myTabActiveColor      = "#46D9FF"
+    myTabInactiveColor       = "#313846"
+    myTabActiveBorderColor   = "#46D9FF"
+    myTabInactiveBorderColor = "#282C34"
+    myTabActiveTextColor     = "#282C34"
+    myTabInactiveTextColor   = "#D0D0D0"
 
     myFocusFollowsMouse  = False
     myClickJustFocuses   = True
@@ -293,7 +261,7 @@
     prompt      = 30
     status      = 20
 
-
+    myNormalBorderColor, myFocusedBorderColor :: String
     myNormalBorderColor     = "#000000"
     myFocusedBorderColor    = active
 
@@ -305,13 +273,12 @@
 
     myFont       = "xft:NotoSansMono Nerd Font:style=Regular:size=12:antialias=true:hinting=true"
     myMediumFont = "xft:NotoSansMono Nerd Font:style=Regular:size=32:antialias=true:hinting=true"
-    myBigFont    = "xft:NotoSansMono Nerd Font:style=Regular:size=12:antialias=true:hinting=true"
     myLargeFont  = "xft:NotoSansMono Nerd Font:style=Bold:size=60:antialias=true:hinting=true"
 
 
   #+end_src
 
-  Search engines:
+  Search engines, several from [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-Search.html][XMonad.Actions.Search]] + custom ones I regularly use:
 
   #+begin_src haskell -n
     archwiki, news, reddit, urban :: S.SearchEngine
@@ -333,32 +300,35 @@
                  ]
   #+end_src
 
-* src/MyKeys.hs [0/2]
+* src/MyKeys.hs
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/MyKeys.hs"
   :END:
 
+  Interesting parts:
 
-  - [ ] [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-ShowText.html][XMonad.Actions.ShowText]] -- ShowText displays text for sometime on the screen.
-  - [ ] Next we'll be adding [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] description
+  - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-ShowText.html][XMonad.Actions.ShowText]] -- ShowText displays text for sometime on the screen.
+  - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] -- Which is used by the [[*src/MyCheatsheet][cheatsheet]].
 
-  Modules:
-
+  #+CAPTION: MyKeys definition
   #+begin_src haskell -n
     module MyKeys
     (myKeys,myCheatsheetKey)
     where
 
-    -- import System.IO
     import Data.Char (isSpace, toUpper) --isSpace?
     import System.Exit -- (exitSuccess)
     import XMonad
+
     import XMonad.Layout.MultiToggle
     import XMonad.Layout.MultiToggle.Instances
     import XMonad.Layout.ResizableTile
-    import XMonad.Util.EZConfig     -- Simpler keybinding syntax
-    import XMonad.Util.NamedActions -- Allows labelling of keybindings
     import qualified XMonad.StackSet as W
+    import XMonad.Actions.CycleWS
+
+    import XMonad.Util.EZConfig
+    import XMonad.Util.NamedActions
+
     import XMonad.Util.NamedScratchpad
 
     import XMonad.Prompt
@@ -368,19 +338,32 @@
     import qualified XMonad.Actions.Search as S
 
     import XMonad.Actions.DynamicProjects       -- to switch to projects
-    -- Which programs to use as defaults
-    import Options
+
+    import Options                              -- defaults
     import MyScratchpads
 
   #+end_src
 
-  Help functions:
 
+  #+CAPTION: Help functions
   #+begin_src haskell -n
     -- Convert multiword strings to arguments (concatenate with delimiters)
     -- This makes sure my shell scripts correctly interpret their arguments
     args :: String -> [String] -> String
     args command arguments = command ++ " " ++ unwords (map show arguments)
+
+    quitXmonad :: X ()
+    quitXmonad = confirmPrompt hotPromptTheme "exit"
+      $ io (exitWith ExitSuccess)
+
+    rebuildXmonad :: X ()
+    rebuildXmonad = do
+      -- spawn "xmonad --recompile && xmonad --restart"
+      spawn myBuildScript
+
+    restartXmonad :: X ()
+    restartXmonad = do
+      spawn "xmonad --restart"
 
   #+end_src
 
@@ -390,7 +373,7 @@
   - H is Hyper, which I have set to the menu key
   - C-Esc is Super tapped on its own
 
-  =myKeys= contains all the key bindings, also pre-define longer commands:
+  =myKeys= contains all the key bindings, also, we pre-define longer commands:
 
   #+begin_src haskell -n
     myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
@@ -401,7 +384,6 @@
         -- Abbreviations for certain actions
         menuEditScript         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
         menuEditConfig         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
-        menuChangeColourscheme = spawn $ args "menuEditConfigsS" [myMenu]
 
         viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
         shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
@@ -418,8 +400,9 @@
 
   #+begin_src haskell -n
         subKeys "Core"
-        [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ confirmPrompt hotPromptTheme "exit" $ io (exitWith ExitSuccess))
-        , ("M-q",                     addName "Recompile & restart"    $ spawn myBuildScript)
+        [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ quitXmonad)
+        , ("M-q",                     addName "Recompile & restart"    $ rebuildXmonad)
+        , ("M-M1-q",                  addName "Restart"                $ restartXmonad)
         , ("C-<Escape>",              addName "Application launcher"   $ spawn myAppM)
         , ("M-S-c",                   addName "Close window"           $ kill)
         ] ^++^
@@ -427,6 +410,11 @@
   #+end_src
 
   Window manager bindings, for these I use =Super=:
+
+  - Screens
+  - Workspaces ([[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html][XMonad.Actions.CycleWS]])
+  - Layouts
+  - Windows
 
   #+begin_src haskell -n
         subKeys "Screens" (
@@ -438,16 +426,17 @@
         ]) ^++^
 
         subKeys "Workspaces" (
-        --[ ("M-u",                     addName "View next"              $ )
-        --, ("M-i,",                    addName "View previous"          $ )
-        --, ("M-S-u",                   addName "Send to next"           $ )
-        --, ("M-S-i",                   addName "Send to previous"       $ )
-        --] ^++^
         [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
             | (key,i) <- zip [1..9] (XMonad.workspaces conf)
         ] ^++^
         [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
             | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        ] ^++^
+        [ ("M-<Left>"     , addName "Next workspace"              $ prevWS)
+        , ("M-<Right>"    , addName "Previous workspace"          $ nextWS)
+        , ("M3-<Tab>"     , addName "toggle last workspace"       $ toggleWS)
+        , ("M-S-<Left>"   , addName "Shift to next workspace"     $ shiftToNext >> prevWS)
+        , ("M-S-<Right>"  , addName "Shift to previous workspace" $ shiftToNext >> nextWS)
         ]) ^++^
 
         subKeys "Layouts"
@@ -457,7 +446,7 @@
         , ("M-u",                     addName "Expand slave"           $ sendMessage MirrorShrink)
         , ("M-,",                     addName "Inc master windows"     $ sendMessage $ IncMasterN 1)
         , ("M-.",                     addName "Dec master windows"     $ sendMessage $ IncMasterN (-1))
-        , ("M-<Space>",              addName "Next layout"            $ sendMessage NextLayout)
+        , ("M-<Space>",               addName "Next layout"            $ sendMessage NextLayout)
         , ("M-f",                     addName "Toggle fullscreen"      $ sendMessage $ Toggle NBFULL)
         ] ^++^
 
@@ -503,11 +492,9 @@
         , ("M3-z",                    addName "Zoom"                   $ spawn "zoom")
         ] ^++^
 
-        subKeys "My Scripts"
+        subKeys "My (rofi) Scripts"
         [ ("M3-p M3-p",                 addName "Edit scripts"           $ menuEditScript)
         , ("M3-p M3-e",                 addName "Edit configs"           $ menuEditConfig)
-        , ("M3-p M3-c",                 addName "Change colourscheme"    $ menuChangeColourscheme)
-        -- , ("M3-p M3-z",                 addName "Read PDF file"          $ menuReadPdf)
         ] ^++^
 
         subKeys "Multimedia Keys"
@@ -519,6 +506,12 @@
         , ("<XF86TouchpadToggle>",    addName "Toggle Touchpad"        $ spawn "toggleTouchpadS")
         , ("<Print>",                 addName "Take screenshot"        $ spawn (myPrintScreen ++ " -n"))
         , ("S-<Print>",               addName "Take screenshot menu"   $ spawn myPrintScreen)
+        , ("M-u p",                   addName "Play music"             $ spawn "mpc play")
+        , ("M-u ,",                   addName "Play next"              $ spawn "mpc next")
+        , ("M-u .",                   addName "Play previous"          $ spawn "mpc prev")
+        , ("M-u <Space>",  addName "Toggle play"            $ flashText myFlashConfig 1 "Pause" >>spawn "mpc toggle")
+        , ("M-u /",        addName "Music player"           $ namedScratchpadAction myScratchPads "myMusic")
+        , ("M-u n",        addName "Fetch TV url"           $ spawn "newseries -p")
         ] ^++^
 
         subKeys "Scratchpads"
@@ -531,6 +524,22 @@
         , ("M-z p"       , addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
         ] ^++^
 
+  #+end_src
+
+  Prompts (=H-m=, man-page) and Search-engines(=H-s= +):
+
+  - =g= S.google
+  - =h= S.hoogle
+  - =w= S.wikipedia
+  - =a= archwiki
+  - =n= news
+  - =r= reddit
+  - =u= urban
+  - =c= S.hackage
+
+  (Defined [[*src/Options.hs][here]])
+
+  #+begin_src haskell -n
         subKeys "Prompts"
         [ ("M3-m", addName "Man-page Prompt" $ manPrompt myPromptTheme)] ^++^
 
@@ -548,6 +557,10 @@
   #+end_src
 
   Theme prompts:
+
+  - Regular, for normal propmpts.
+  - Warm, for projects
+  - Hot, for Quitting and Killing
 
   #+begin_src haskell -n
     myPromptTheme :: XPConfig
@@ -595,6 +608,7 @@
   :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
   :END:
 
+  #+CAPTION: MyBar definition
   #+begin_src haskell -n
 module MyBar
 -- (spawnBarWithHandle, myBarAutostart, myLogHook)
@@ -608,12 +622,8 @@ import System.IO (Handle,hPutStrLn)
 import Options
 
   #+end_src
-   -- myWorkspaceBar config
-   myLogHook :: Handle -> X ()
-   myLogHook h = dynamicLogWithPP $ defaultPP
-   { ppOutput          = hPutStrLn h
 
-   myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
+  #+CAPTION: myLoghook
   #+begin_src haskell -n
 myLogHook :: Handle -> X ()
 myLogHook h = dynamicLogWithPP $ xmobarPP
@@ -637,6 +647,9 @@ myLogHook h = dynamicLogWithPP $ xmobarPP
 
 Symbols used are from [[https://fontawesome.com/icons][fontawesome]].
 
+Code is partly based on snippets from [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/src/XMonad.Hooks.DynamicLog.html][here]], which is the most understandable Haskell I've read so far.
+
+#+Caption: Replacing long project names with symbols and icons
 #+begin_src haskell -n
 -- Symbols for displaying workspaces in xmobar
 -- Must be functions, as it expects a different symbol for each
@@ -660,7 +673,7 @@ xmobarIcon :: String -> String
 xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
                "browsers" -> "<fn=1>\xf0ac</fn>"
                "emacs"    -> "<fn=1>\xf044</fn>"
-               "xmonad"   -> "<fn=2>XM</fn>"
+               "xmonad"   -> "<fn=0>xm</fn>"
                "term"     -> "<fn=1>\xf044</fn>"
                "chat"     -> "<fn=1>\xf086</fn>"
                "scratch"  -> "<fn=1>\xf0ad</fn>"
@@ -673,93 +686,19 @@ xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
 -- Use shorter indicators for the layout
 xmobarLay :: String -> String
 xmobarLay x = case x of
-               "Tall"  -> "<fn=0>T</fn>"
-               "Three" -> "<fn=0>3</fn>"
-               "Tabs"  -> "<fn=1>\xf03b</fn>"
-               "Full"  -> "<fn=0>F</fn>"
+               --"Tall"  -> "<fn=0>T</fn>"
+               "Tall"    -> "<fn=1>\xf00b</fn>" -- th-list
+               "Three"   -> "<fn=0>3</fn>"
+               "Full"    -> "<fn=1>\xf0c8</fn>" -- square "<fn=0>F</fn>"
+               "magnify" -> "<fn=1>\xf00e</fn>" -- search-plus
+               "monocle" -> "<fn=1>\xf06e</fn>" -- eye
+               "Tabs"    -> "<fn=1>\xf0db</fn>" -- columns
+               --"Tabs"  -> "<fn=1>\xf03b</fn>"
+               "grid"    -> "<fn=1>\xf009</fn>" -- th-grid
+               "floats"  -> "<fn=1>\xf0c2</fn>" -- cloud
                _       -> x
 
 #+end_src
-
-* COMMENT OLD src/MyBar.hs
-  :PROPERTIES:
-  :header-args: :tangle no
-  :END:
-
-  Module declaration:
-
-  #+begin_src haskell -n
-    module MyBar
-    (spawnBarWithHandle, myBarAutostart, myLogHook)
-    where
-
-    import System.IO
-    import XMonad
-    import XMonad.Hooks.DynamicLog
-    import XMonad.Util.Run (spawnPipe)
-    import Options
-
-  #+end_src
-
-  Spawn the bar:
-
-  #+begin_src haskell -n
-    -- Spawn the bar, returning its handle
-    spawnBarWithHandle :: IO (Handle)
-    spawnBarWithHandle
-        | myBar == XMobar = spawnPipe $ "xmobar " ++ myXMobarConf
-        | otherwise       = spawnPipe ""
-
-    -- Other processes that need to run, depending on the bar
-    myBarAutostart :: String
-    myBarAutostart
-        -- | myBar == XMobar   = "stalonetray --config " ++ myStalonetrayConf
-        | myBar == Tint2    = "tint2 -c "             ++ myTint2Conf
-        | myBar == Taffybar = "taffybar"
-
-    -- Symbols for displaying workspaces in xmobar
-    -- Must be functions, as it expects a different symbol for each
-    myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
-    myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
-    myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
-
-    -- Data to be sent to the bar
-    -- barProc points to the status bar's process handle
-    myXMobarLogHook :: Handle -> X ()
-    -- dynamicLogWithPP allows us to format the output
-    -- xmobarPP gives us some defaults
-    myXMobarLogHook barProc = dynamicLogWithPP xmobarPP
-            -- Write to bar instead of stdout
-            { ppOutput          = hPutStrLn barProc
-            -- How to order the different sections of the log
-            , ppOrder           = \(workspace:layout:title:extras)
-                                -> [workspace,layout]
-            -- Separator between different sections of the log
-            , ppSep             = "  "
-            -- Format the workspace information
-            , ppCurrent         = xmobarColor "white" "" . myCurrentWsSymbol
-            , ppHidden          = xmobarColor "white" "" . myHiddenWsSymbol
-            , ppHiddenNoWindows = xmobarColor "white" "" . myEmptyWsSymbol
-            }
-
-    myLogHook :: Handle -> X ()
-    myLogHook barProc
-        | myBar == XMobar = myXMobarLogHook barProc
-        | otherwise       = def  -- Outputting an unread log can crash XMonad
-
-  #+end_src
-
-  #+begin_example haskell
-, ppLayout = (\ x -> case x of
-"tall"               -> "<fc=green><fn=1>\xf00b</fn></fc>" -- th-list
-"magnify"            -> "<fc=green><fn=1>\xf00e</fn></fc>" -- search-plus
-"monocle"            -> "<fc=green><fn=1>\xf06e</fn></fc>" -- eye
-"tabs"               -> "<fc=green><fn=1>\xf0db</fn></fc>" -- columns
-"grid"               -> "<fc=green><fn=1>\xf009</fn></fc>" -- th-grid
-"floats"             -> "<fc=green><fn=1>\xf0c2</fn></fc>" -- cloud
-"full"               -> "<fn=0><fc=green>Full</fn></fc>"
-_                    -> x )
-  #+end_example
 
 * src/MyLayoutHook.hs
   :PROPERTIES:
@@ -807,12 +746,12 @@ _                    -> x )
                            True                -- Enable window gaps
 
     myTabConfig = def { fontName            = myFont
-                      , activeColor         = myTabActiveColour
-                      , inactiveColor       = myTabInactiveColour
-                      , activeBorderColor   = myTabActiveBorderColour
-                      , inactiveBorderColor = myTabInactiveBorderColour
-                      , activeTextColor     = myTabActiveTextColour
-                      , inactiveTextColor   = myTabInactiveTextColour
+                      , activeColor         = myTabActiveColor
+                      , inactiveColor       = myTabInactiveColor
+                      , activeBorderColor   = myTabActiveBorderColor
+                      , inactiveBorderColor = myTabInactiveBorderColor
+                      , activeTextColor     = myTabActiveTextColor
+                      , inactiveTextColor   = myTabInactiveTextColor
                       }
 
     tall  = renamed [Replace "Tall"]
