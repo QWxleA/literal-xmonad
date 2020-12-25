@@ -139,16 +139,16 @@
 
 
      import XMonad.Util.Run(spawnPipe)               -- For xmobar
-     -- import XMonad.Hooks.DynamicLog
+     import XMonad.Hooks.DynamicLog
      -- import XMonad.Util.NamedScratchpad(namedScratchpadFilterOutWorkspacePP)
-     -- import System.IO(hPutStrLn)
+     import System.IO(Handle,hPutStrLn)
 
      import XMonad.Actions.DynamicProjects
 
      import Options
      import MyKeys
      import MyCheatsheet
-     import MyBar
+     -- import MyBar
      import MyLayoutHook
      import MyManageHook (myManageHook)
      import MyWorkspaces as WS
@@ -183,11 +183,20 @@
              , workspaces         = WS.names
              , startupHook        = do
                  spawnOnce myAutostart
-                 spawnOnce myBarAutostart
+                 -- spawnOnce myBarAutostart
              }
+
    #+end_src
-         myLogHook :: Handle -> X ()
-         myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
+
+   -- myWorkspaceBar config
+   myLogHook :: Handle -> X ()
+   myLogHook h = dynamicLogWithPP $ defaultPP
+   { ppOutput          = hPutStrLn h
+
+   myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
+   #+begin_src haskell -n
+         -- myLogHook :: Handle -> X ()
+         where myLogHook h = dynamicLogWithPP $ xmobarPP
                       { ppOutput          = hPutStrLn h
                       , ppCurrent         = xmobarColor active "" . wrap "[" "]"
                       , ppTitle           = xmobarColor active "" . shorten 50
@@ -199,8 +208,6 @@
                       , ppLayout          = xmobarColor yellow ""
                       , ppOrder           = id
                       }
-   #+begin_src haskell -n
-
    #+end_src
 * src/Options.hs
   :PROPERTIES:
@@ -612,11 +619,12 @@
 
   #+end_src
 
-* src/MyBar.hs
+* COMMENT src/MyBar.hs
   :PROPERTIES:
-  :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
+  :header-args: :tangle no
   :END:
 
+  OLD: "~/.config/xmonad/src/MyBar.hs"
   Module declaration:
 
   #+begin_src haskell -n
