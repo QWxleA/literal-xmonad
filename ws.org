@@ -283,7 +283,7 @@
     violet  = "#6c71c4"
     blue    = "#268bd2"
     cyan    = "#2aa198"
-    green       = "#859900"
+    green   = "#859900"
 
     -- sizes
     gap         = 10
@@ -297,10 +297,10 @@
     myNormalBorderColor     = "#000000"
     myFocusedBorderColor    = active
 
-    active      = blue
-    activeWarn  = red
-    inactive    = base02
-    focusColor  = blue
+    active       = blue
+    activeWarn   = red
+    inactive     = violet
+    focusColor   = blue
     unfocusColor = base02
 
     myFont       = "xft:NotoSansMono Nerd Font:style=Regular:size=12:antialias=true:hinting=true"
@@ -621,26 +621,43 @@ myLogHook h = dynamicLogWithPP $ xmobarPP
                   , ppTitle           = xmobarColor active "" . shorten 50
                   , ppVisible         = xmobarColor base0  "" . wrap "(" ")" . xmobarIcon
                   , ppUrgent          = xmobarColor red    "" . wrap " " " "
-                  , ppSep             = xmobarColor red myNormalBorderColor " : "
+                  , ppSep             = xmobarColor red myNormalBorderColor " . "
                   , ppWsSep           = " "
-                  , ppLayout          = xmobarColor yellow ""
+                  , ppLayout          = xmobarColor yellow "" . xmobarLay
                   , ppOrder           = id
                   -- Format the workspace information
                   -- , ppCurrent         = xmobarColor active "" . wrap "[" "]"
-                  , ppCurrent         = xmobarColor active   "" . wrap "[" "]" . xmobarIcon
-                  , ppHidden          = xmobarColor inactive "" . xmobarIcon
+                  , ppCurrent         = xmobarColor' active   "" . wrap "[" "]"
+                  , ppHidden          = xmobarColor' inactive ""
                   -- , ppHiddenNoWindows = const ""
                   , ppHiddenNoWindows = xmobarColor inactive "" . myEmptyWsSymbol
                   }
 
+#+end_src
+
+Symbols used are from [[https://fontawesome.com/icons][fontawesome]].
+
+#+begin_src haskell -n
 -- Symbols for displaying workspaces in xmobar
 -- Must be functions, as it expects a different symbol for each
 myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
 myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
 myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
 
+-- Show scratchpads, just with another color
+xmobarColor' :: String  -- ^ foreground color: a color name, or #rrggbb format
+             -> String  -- ^ background color
+             -> String  -- ^ output string
+             -> String
+xmobarColor' fg bg x = xmobarColor fg2 bg $ xmobarIcon x
+              where fg2 = case x of
+                      "NSP" -> unfocusColor
+                      --"chat" -> red
+                      _ -> fg
+
+-- Use shorter indicators for the workspaces
 xmobarIcon :: String -> String
-xmobarIcon x = case x of
+xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
                "browsers" -> "<fn=1>\xf0ac</fn>"
                "emacs"    -> "<fn=1>\xf044</fn>"
                "xmonad"   -> "<fn=2>XM</fn>"
@@ -648,10 +665,21 @@ xmobarIcon x = case x of
                "chat"     -> "<fn=1>\xf086</fn>"
                "scratch"  -> "<fn=1>\xf0ad</fn>"
                "media"    -> "<fn=1>\xf085</fn>"
-               "docs"    -> "<fn=1>\xf19d</fn>"
+               "docs"     -> "<fn=1>\xf19d</fn>"
                "tv"       -> "<fn=1>\xf008</fn>"
+               "NSP"      -> "<fn=1>\xf249</fn>"
                _          -> x
-  #+end_src
+
+-- Use shorter indicators for the layout
+xmobarLay :: String -> String
+xmobarLay x = case x of
+               "Tall"  -> "<fn=0>T</fn>"
+               "Three" -> "<fn=0>3</fn>"
+               "Tabs"  -> "<fn=1>\xf03b</fn>"
+               "Full"  -> "<fn=0>F</fn>"
+               _       -> x
+
+#+end_src
 
 * COMMENT OLD src/MyBar.hs
   :PROPERTIES:
@@ -2089,10 +2117,10 @@ shoot && notify
   Three kind of fonts used, regular, bold for the time, and font-awesome for icons.
   Colors the same as in =xmonad.hs=.
 
-  #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
+  #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc2.hs"
   Config { position   = Top
            , font              = "xft:Source Code Pro:size=9:bold:antialias=true"
-           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true",
+           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true:style=Bold",
                                    "xft:Noto Sans:size=10:style=Bold"]
            , fgColor  = "#ffffff"
            , bgColor  = "#000000"
@@ -2128,7 +2156,8 @@ shoot && notify
                        , Run Wireless "" -- will match any wireless device
                          [ "-a", "l"
                          , "-x", "-"
-                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid> <quality>%</fc>"
+                         --, "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid> <quality>%</fc>"
+                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid>"
                          , "-L", "50"
                          , "-H", "75"
                          -- , "-l", "#dc322f" -- red
@@ -2158,6 +2187,78 @@ shoot && notify
            }
 
    #+end_src
+
+  #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
+  Config { position   = Top
+           , font              = "xft:Source Code Pro:size=9:bold:antialias=true"
+           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true:style=Bold",
+                                   "xft:Noto Sans:size=10:style=Bold"]
+           , fgColor  = "#ffffff"
+           , bgColor  = "#000000"
+           , alpha    = 150  -- 0 transparent, 255 opaque
+           , sepChar  = "%"
+           , alignSep = "}{"
+           , template = " %StdinReader% }{ %cpu%  %memory%  %coretemp% %wi%  %battery% %keyb% | %date% "
+           , commands = [ Run StdinReader
+                        --, Run Date "%_I:%M" "time" 300 -- every 30s
+                        --, Run Date "%A %_d %B" "date" 18000 -- every 30min
+                        -- CPU core temperature
+                        , Run CoreTemp [ "--template" , "<core0>/<core1>°C"
+                                       , "--Low"      , "70"
+                                       , "--High"     , "80"
+                                       , "--low"      , "#33BB33"
+                                       , "--normal"   , "#AA8800"
+                                       , "--high"     , "#FF0000"
+                                       ] 50 -- every 5s
+                       , Run Com "myKbS" [] "keyb" 20
+                       , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc> <total>%"
+                                --, "--normal","#bbc2cf"
+                                , "-L", "40"
+                                , "-H", "60"
+                                , "-l", "#586e75"
+                                , "-h", "#dc322f" -- red
+                                ] 50
+                       , Run Memory ["-t","<fc=#51afef><fn=1></fn></fc> <usedratio>%"
+                                    , "-H","80"
+                                    , "-L","10"
+                                    , "-l", "#586e75"
+                                    , "-h", "#268bd2" -- blue, just to differentiate from cpu bar
+                                    ] 50
+                       , Run Wireless "" -- will match any wireless device
+                         [ "-a", "l"
+                         , "-x", "-"
+                         --, "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid> <quality>%</fc>"
+                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid></fc>"
+                         , "-L", "50"
+                         , "-H", "75"
+                         -- , "-l", "#dc322f" -- red
+                         , "-l", "#6c71c4" -- violet
+                         , "-n", "#6c71c4" -- violet
+                         , "-h", "#6c71c4" -- violet
+                         ] 10
+                       , Run Battery
+                         [ "-t", "<fc=#b58900><acstatus></fc>"
+                         , "-L", "20"
+                         , "-H", "85"
+                         , "-l", "#dc322f"
+                         , "-n", "#b58900"
+                         , "-h", "#b58900"
+                         , "--" -- battery specific options
+                         -- discharging status
+                         , "-o"  , "<fn=1>\xf242</fn> <left>% (<timeleft>) <watts>"
+                         -- AC "on" status
+                         , "-O"  , "<fn=1>\xf1e6</fn> <left>%"
+                         -- charged status
+                         , "-i"  , "<fn=1>\xf1e6</fn> <left>%"
+                         , "--off-icon-pattern", "<fn=1>\xf1e6</fn>"
+                         , "--on-icon-pattern", "<fn=1>\xf1e6</fn>"
+                         ] 10
+                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %_d %b %Y | d.%j w.%W</fc>   <fc=#2AA198><fn=1></fn><fn=2> %H:%M:%S</fn></fc>" "date" 10
+                        ]
+           }
+
+   #+end_src
+
 
   #+begin_src haskell :tangle "~/.config/xmobar/xmobarDebug.hs"
   Config { position = Top
