@@ -137,18 +137,13 @@
      import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
      import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
 
-
-     import XMonad.Util.Run(spawnPipe)               -- For xmobar
-     import XMonad.Hooks.DynamicLog
-     -- import XMonad.Util.NamedScratchpad(namedScratchpadFilterOutWorkspacePP)
-     import System.IO(Handle,hPutStrLn)
-
      import XMonad.Actions.DynamicProjects
+     import XMonad.Util.Run(spawnPipe)               -- For xmobar src/MyBar
 
      import Options
      import MyKeys
      import MyCheatsheet
-     -- import MyBar
+     import MyBar
      import MyLayoutHook
      import MyManageHook (myManageHook)
      import MyWorkspaces as WS
@@ -161,8 +156,7 @@
      main :: IO ()
      main = do
          xmproc <- spawnPipe "xmobar ~/.config/xmobar/xmobarrc.hs"
-         -- barProc <- spawnBarWithHandle  -- Start myBar and return a handle
-         -- spawn "pkill -o taffybar" -- Kill oldest taffybar instance (move to M-q binding?)
+         -- xmproc <- spawnPipe "xmobar ~/.config/xmobar/xmobarDebug.hs"
 
          -- Applies this config file over the default config for desktop use
          xmonad
@@ -181,34 +175,11 @@
              , layoutHook         = myLayoutHook
              , logHook            = myLogHook xmproc
              , workspaces         = WS.names
-             , startupHook        = do
-                 spawnOnce myAutostart
-                 -- spawnOnce myBarAutostart
+             , startupHook        = spawnOnce myAutostart
              }
 
    #+end_src
 
-   -- myWorkspaceBar config
-   myLogHook :: Handle -> X ()
-   myLogHook h = dynamicLogWithPP $ defaultPP
-   { ppOutput          = hPutStrLn h
-
-   myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
-   #+begin_src haskell -n
-         -- myLogHook :: Handle -> X ()
-         where myLogHook h = dynamicLogWithPP $ xmobarPP
-                      { ppOutput          = hPutStrLn h
-                      , ppCurrent         = xmobarColor active "" . wrap "[" "]"
-                      , ppTitle           = xmobarColor active "" . shorten 50
-                      , ppVisible         = xmobarColor base0  "" . wrap "(" ")"
-                      , ppUrgent          = xmobarColor red    "" . wrap " " " "
-                      , ppHiddenNoWindows = const ""
-                      , ppSep             = xmobarColor red myNormalBorderColor " : "
-                      , ppWsSep           = " "
-                      , ppLayout          = xmobarColor yellow ""
-                      , ppOrder           = id
-                      }
-   #+end_src
 * src/Options.hs
   :PROPERTIES:
   :header-args: :tangle "~/.config/xmonad/src/Options.hs"
@@ -619,12 +590,74 @@
 
   #+end_src
 
-* COMMENT src/MyBar.hs
+* src/MyBar.hs
+  :PROPERTIES:
+  :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
+  :END:
+
+  #+begin_src haskell -n
+module MyBar
+-- (spawnBarWithHandle, myBarAutostart, myLogHook)
+where
+
+import XMonad
+
+import XMonad.Hooks.DynamicLog
+import System.IO (Handle,hPutStrLn)
+
+import Options
+
+  #+end_src
+   -- myWorkspaceBar config
+   myLogHook :: Handle -> X ()
+   myLogHook h = dynamicLogWithPP $ defaultPP
+   { ppOutput          = hPutStrLn h
+
+   myLogHook h = dynamicLogWithPP  . namedScratchpadFilterOutWorkspacePP $ xmobarPP
+  #+begin_src haskell -n
+myLogHook :: Handle -> X ()
+myLogHook h = dynamicLogWithPP $ xmobarPP
+                  { ppOutput          = hPutStrLn h
+                  , ppTitle           = xmobarColor active "" . shorten 50
+                  , ppVisible         = xmobarColor base0  "" . wrap "(" ")" . xmobarIcon
+                  , ppUrgent          = xmobarColor red    "" . wrap " " " "
+                  , ppSep             = xmobarColor red myNormalBorderColor " : "
+                  , ppWsSep           = " "
+                  , ppLayout          = xmobarColor yellow ""
+                  , ppOrder           = id
+                  -- Format the workspace information
+                  -- , ppCurrent         = xmobarColor active "" . wrap "[" "]"
+                  , ppCurrent         = xmobarColor active   "" . wrap "[" "]" . xmobarIcon
+                  , ppHidden          = xmobarColor inactive "" . xmobarIcon
+                  -- , ppHiddenNoWindows = const ""
+                  , ppHiddenNoWindows = xmobarColor inactive "" . myEmptyWsSymbol
+                  }
+
+-- Symbols for displaying workspaces in xmobar
+-- Must be functions, as it expects a different symbol for each
+myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
+myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
+myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
+
+xmobarIcon :: String -> String
+xmobarIcon x = case x of
+               "browsers" -> "<fn=1>\xf0ac</fn>"
+               "emacs"    -> "<fn=1>\xf044</fn>"
+               "xmonad"   -> "<fn=2>XM</fn>"
+               "term"     -> "<fn=1>\xf044</fn>"
+               "chat"     -> "<fn=1>\xf086</fn>"
+               "scratch"  -> "<fn=1>\xf0ad</fn>"
+               "media"    -> "<fn=1>\xf085</fn>"
+               "docs"    -> "<fn=1>\xf19d</fn>"
+               "tv"       -> "<fn=1>\xf008</fn>"
+               _          -> x
+  #+end_src
+
+* COMMENT OLD src/MyBar.hs
   :PROPERTIES:
   :header-args: :tangle no
   :END:
 
-  OLD: "~/.config/xmonad/src/MyBar.hs"
   Module declaration:
 
   #+begin_src haskell -n
@@ -2057,14 +2090,14 @@ shoot && notify
   Colors the same as in =xmonad.hs=.
 
   #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
-  Config { position = Top
-           , font     = "xft:Source Code Pro:size=9:bold:antialias=true"
+  Config { position   = Top
+           , font              = "xft:Source Code Pro:size=9:bold:antialias=true"
            , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true",
                                    "xft:Noto Sans:size=10:style=Bold"]
-           , fgColor = "#ffffff"
-           , bgColor = "#000000"
-           , alpha = 50  -- 0 transparent, 255 opaque
-           , sepChar = "%"
+           , fgColor  = "#ffffff"
+           , bgColor  = "#000000"
+           , alpha    = 150  -- 0 transparent, 255 opaque
+           , sepChar  = "%"
            , alignSep = "}{"
            , template = " %StdinReader% }{ %cpu%  %memory%  %coretemp% %wi%  %battery% %keyb% | %date% "
            , commands = [ Run StdinReader
@@ -2078,7 +2111,7 @@ shoot && notify
                                        , "--normal"   , "#AA8800"
                                        , "--high"     , "#FF0000"
                                        ] 50 -- every 5s
-                       , Run Com "myKbS" [] "keyb" 50
+                       , Run Com "myKbS" [] "keyb" 20
                        , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc> <total>%"
                                 --, "--normal","#bbc2cf"
                                 , "-L", "40"
@@ -2121,6 +2154,23 @@ shoot && notify
                          , "--on-icon-pattern", "<fn=1>\xf1e6</fn>"
                          ] 10
                        , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %_d %b %Y | d.%j w.%W</fc>   <fc=#2AA198><fn=1></fn><fn=2> %H:%M:%S</fn></fc>" "date" 10
+                        ]
+           }
+
+   #+end_src
+
+  #+begin_src haskell :tangle "~/.config/xmobar/xmobarDebug.hs"
+  Config { position = Top
+           , font     = "xft:Source Code Pro:size=9:bold:antialias=true"
+           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true",
+                                   "xft:Noto Sans:size=10:style=Bold"]
+           , fgColor = "#ffffff"
+           , bgColor = "#000000"
+           -- , alpha = 50  -- 0 transparent, 255 opaque
+           , sepChar = "%"
+           , alignSep = "}{"
+           , template = " %UnsafeStdinReader% "
+           , commands = [ Run UnsafeStdinReader --StdinReader
                         ]
            }
 
