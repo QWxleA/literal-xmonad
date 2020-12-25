@@ -16,18 +16,24 @@
     #!/bin/sh
     #
     # As of 0.13, xmonad --recompile will look for a custom build script.
+    #set -e
+
     EXEC_PATH="$1"
-
-    set -e
     ICON="~/Pictures/Icons/Xmonad-logo.svg.png"
+    echo "DB: EXEC_PATH: $EXEC_PATH"
 
-    rm -rf ~/.xmonad #carefull!!
+    die() {
+        notify-send "Xmonad build FAILED!" "$1" -i "$ICON" &
+        echo "Xmonad build FAILED! $1"
+        exit 1
+        }
+    #rm -rf ~/.xmonad #carefull!!
     cd ~/.config/xmonad
     notify-send "Xmonad" "Build started ($1)" -i "$ICON" &
     #stack build || stack init
-    stack install || notify-send "Xmonad FAILED!" "Build error ($@)" -i "$ICON" &
+    stack install || die "Build error ($@)"
     ln -sf ~/.local/bin/xmonad $EXEC_PATH #!!
-    xmonad --restart
+    xmonad --restart && notify-send "Xmonad build SUCCES!" "Restarted at $(date)" -i "$ICON" &
   #+end_src
 
   Fitspec is needed for the cheatsheet.
@@ -122,12 +128,16 @@
    #+end_src
 
 ** Body
-   #+begin_src haskell +n
+   Imports:
+
+   #+begin_src haskell -n
      import XMonad                                   -- standard xmonad library
      import XMonad.Config.Desktop                    -- default desktopConfig
      import XMonad.Hooks.EwmhDesktops                -- Fixes the automatic fullscreening & wmctrl
      import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
      import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
+
+     import XMonad.Actions.DynamicProjects
 
      import Options
      import MyKeys
@@ -137,6 +147,9 @@
      import MyManageHook (myManageHook)
      import MyWorkspaces as WS
 
+   #+end_src
+
+   #+begin_src haskell +n
      main :: IO ()
      main = do
          barProc <- spawnBarWithHandle  -- Start myBar and return a handle
@@ -146,6 +159,7 @@
          xmonad
              -- Increased compliance with the Extended Window Manager Hints standard
              $ ewmh
+             $ dynamicProjects WS.projects
              -- Add keybindings in such a way as to allow viewing a cheatsheet with M-?
              $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys
              $ myConfig barProc
@@ -160,8 +174,9 @@
              , layoutHook         = myLayoutHook
              , logHook            = myLogHook barProc
              , workspaces         = WS.names
-             , startupHook        = do spawnOnce myBarAutostart
-                                       spawnOnce myAutostart
+             , startupHook        = do
+                 spawnOnce myAutostart
+                 spawnOnce myBarAutostart
              }
    #+end_src
 
@@ -352,6 +367,7 @@
     import XMonad.Prompt.Man
     import qualified XMonad.Actions.Search as S
 
+    import XMonad.Actions.DynamicProjects       -- to switch to projects
     -- Which programs to use as defaults
     import Options
     import MyScratchpads
@@ -455,6 +471,16 @@
         , ("M-S-k",                   addName "Swap previous"          $ windows W.swapUp)
         , ("M-<Return>",              addName "Swap master"            $ windows W.swapMaster)
         , ("M-t",                     addName "Unfloat"                $ unFloat)
+        ] ^++^
+
+  #+end_src
+
+  Projects:
+
+  #+begin_src haskell -n
+        subKeys "Projects"
+        [ ("M-w"   , addName "switch Project Prompt"   $ switchProjectPrompt warmPromptTheme)
+        , ("M-S-w" , addName "shift To Project Prompt" $ shiftToProjectPrompt warmPromptTheme)
         ] ^++^
 
   #+end_src
@@ -1069,21 +1095,21 @@ zoomFloat = doFloatDep move
   :header-args:  :tangle "~/.config/xmonad/src/MyWorkspaces.hs"
   :END:
 
+  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-DynamicProjects.html][XMonad.Actions.DynamicProjects]]
+
   #+begin_src haskell -n
   module MyWorkspaces
-    ( -- projects,
-      -- terminal,
+    ( projects,
       names
-      -- scratchPads,
-      -- asKey,
-      -- viewPrevWS,
     )
   where
 
   import XMonad
   import XMonad.Actions.DynamicProjects
   import XMonad.Layout.LayoutCombinators (JumpToLayout (..))
+  import XMonad.Util.SpawnOnce
 
+  import Options
   #+end_src
 
     Workspaces:
@@ -1143,8 +1169,9 @@ zoomFloat = doFloatDep move
       { projectName = "tv",
         projectDirectory = "~/Video",
         projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Padded")
-          spawn "alaritty -e ranger"
+          sendMessage (JumpToLayout "Tabbed")
+          -- spawn "alaritty -e ranger"
+          spawn (myTerminal ++ " -t tv2 --class tv -e ranger")
       }
     ]
 
@@ -1154,36 +1181,12 @@ zoomFloat = doFloatDep move
 
   #+end_src
 
-  #+begin_src haskell -n :tangle no
-     -- wsWEB     = "web"
-     -- wsTXT     = "txt"
-     -- wsTRM     = "term"
-     -- wsSYS     = "sys"
-     -- wsCHT     = "chat"
-     -- wsFLT     = "flot"
-     -- wsMOV     = "movies"
-     -- wsTMP     = "tmp"
-     -- wsPythonP = "Python"
-     -- wsXmonadP = "Xmonad"
-     -- wsKBorgP  = "KBorg"
-     -- wsHaskell = "haskell"
-     -- wsQWEB    = "qweb"
-
-     -- myWorkspaces = [wsWEB, wsTXT, wsTRM, wsSYS, wsCHT, wsFLT, wsMOV, wsTMP]
-
-     -- myWorkspaces :: [String]
-     -- myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
-
-     names :: [String]
-     names = ["Web","2","3","4","5","6","7","8","9"]
-
-  #+end_src
 * External scripts
-** (Xmonad) pre-startup script
+** src/autostartS
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
 
    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostartS"
-     # Desktop
+     echo "src/autostartS started - $(date)" >> ~/tmp/xmonad.log
      wallpaper
 
      if [ -z "$(pgrep unclutter)" ] ; then
