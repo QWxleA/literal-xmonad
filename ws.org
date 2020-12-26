@@ -9,6 +9,8 @@
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="res/org.css"/>
 #+EXPORT_FILE_NAME: index.html
 
+Source of this document [[https://github.com/QWxleA/literal-xmonad/blob/master/docs/ws.html][here on github]].
+
 **Note:** The source of this document does not always look nice, but otherwise my haskell sources wouldn't line up correctly
 
 Use Emacs to export this configuration, but be carefull as it might also overwrite other settings!
