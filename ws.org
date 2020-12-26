@@ -2,7 +2,7 @@
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil
 #+options: f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+options: timestamp:t title:t toc:t todo:t |:t
-#+title:
+#+title: Literal XMonad - and support
 #+date: <2020-12-24 Thu>
 #+PROPERTY: header-args  :mkdirp yes
 #+HTML_HEAD: <link href="theme.css" rel="stylesheet">
@@ -223,8 +223,6 @@
     myBorderWidth :: Dimension
     myBorderWidth = 2
 
-
-
     -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
     myTabActiveColor      = "#46D9FF"
     myTabInactiveColor       = "#313846"
@@ -292,6 +290,7 @@
     searchList = [ ("g", S.google)
                  , ("h", S.hoogle)
                  , ("w", S.wikipedia)
+                 , ("i", S.imdb)
                  , ("a", archwiki)
                  , ("n", news)
                  , ("r", reddit)
@@ -305,9 +304,8 @@
   :header-args: :tangle "~/.config/xmonad/src/MyKeys.hs"
   :END:
 
-  Interesting parts:
+  Interesting part:
 
-  - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-ShowText.html][XMonad.Actions.ShowText]] -- ShowText displays text for sometime on the screen.
   - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] -- Which is used by the [[*src/MyCheatsheet][cheatsheet]].
 
   #+CAPTION: MyKeys definition
@@ -328,7 +326,7 @@
 
     import XMonad.Util.EZConfig
     import XMonad.Util.NamedActions
-
+    import XMonad.Actions.ShowText              -- (ref:showTextM)
     import XMonad.Util.NamedScratchpad
 
     import XMonad.Prompt
@@ -343,7 +341,6 @@
     import MyScratchpads
 
   #+end_src
-
 
   #+CAPTION: Help functions
   #+begin_src haskell -n
@@ -415,6 +412,16 @@
   - Workspaces ([[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html][XMonad.Actions.CycleWS]])
   - Layouts
   - Windows
+
+  - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-MultiToggle-Instances.html][XMonad.Layout.MultiToggle.Instances]], key bindings for [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-MultiToggle.html][XMonad.Layout.MultiToggle]]:
+
+    Dynamically apply and unapply transformers to your window layout. This can be used to rotate your window layout by 90 degrees, or to make the currently focused window occupy the whole screen ("zoom in") then undo the transformation ("zoom out").
+
+    - =FULL=         Switch to Full layout
+    - =NBFULL=       Switch to Full with no borders (=Super-f=)
+    - =MIRROR=        Mirror the current layout
+    - =NOBORDERS=    Remove borders
+    - =SMARTBORDERS= Apply smart borders
 
   #+begin_src haskell -n
         subKeys "Screens" (
@@ -493,25 +500,25 @@
         ] ^++^
 
         subKeys "My (rofi) Scripts"
-        [ ("M3-p M3-p",                 addName "Edit scripts"           $ menuEditScript)
-        , ("M3-p M3-e",                 addName "Edit configs"           $ menuEditConfig)
+        [ ("M3-p M3-p",                 addName "Edit scripts"        $ menuEditScript)
+        , ("M3-p M3-e",                 addName "Edit configs"        $ menuEditConfig)
         ] ^++^
 
         subKeys "Multimedia Keys"
-        [ ("<XF86AudioMute>",         addName "Toggle mute"            $ volumeAdjust "togmute")
-        , ("<XF86AudioLowerVolume>",  addName "Decrease volume"        $ volumeAdjust "down")
-        , ("<XF86AudioRaiseVolume>",  addName "Increase volume"        $ volumeAdjust "up")
-        , ("<XF86MonBrightnessDown>", addName "Decrease brightness"    $ spawn "backlightS -dec 10")
-        , ("<XF86MonBrightnessUp>",   addName "Increase brightness"    $ spawn "backlightS -inc 10")
-        , ("<XF86TouchpadToggle>",    addName "Toggle Touchpad"        $ spawn "toggleTouchpadS")
-        , ("<Print>",                 addName "Take screenshot"        $ spawn (myPrintScreen ++ " -n"))
-        , ("S-<Print>",               addName "Take screenshot menu"   $ spawn myPrintScreen)
-        , ("M-u p",                   addName "Play music"             $ spawn "mpc play")
-        , ("M-u ,",                   addName "Play next"              $ spawn "mpc next")
-        , ("M-u .",                   addName "Play previous"          $ spawn "mpc prev")
-        , ("M-u <Space>",  addName "Toggle play"            $ flashText myFlashConfig 1 "Pause" >>spawn "mpc toggle")
-        , ("M-u /",        addName "Music player"           $ namedScratchpadAction myScratchPads "myMusic")
-        , ("M-u n",        addName "Fetch TV url"           $ spawn "newseries -p")
+        [ ("<XF86AudioMute>",         addName "Toggle mute"           $ volumeAdjust "togmute")
+        , ("<XF86AudioLowerVolume>",  addName "Decrease volume"       $ volumeAdjust "down")
+        , ("<XF86AudioRaiseVolume>",  addName "Increase volume"       $ volumeAdjust "up")
+        , ("<XF86MonBrightnessDown>", addName "Decrease brightness"   $ spawn "backlightS -dec 10")
+        , ("<XF86MonBrightnessUp>",   addName "Increase brightness"   $ spawn "backlightS -inc 10")
+        , ("<XF86TouchpadToggle>",    addName "Toggle Touchpad"       $ spawn "toggleTouchpadS")
+        , ("<Print>",                 addName "Take screenshot"       $ spawn (myPrintScreen ++ " -n"))
+        , ("S-<Print>",               addName "Take screenshot menu"  $ spawn myPrintScreen)
+        , ("M-u p",                   addName "Play music"            $ spawn "mpc play")
+        , ("M-u ,",                   addName "Play next"             $ spawn "mpc next")
+        , ("M-u .",                   addName "Play previous"         $ spawn "mpc prev")
+        , ("M-u <Space>",             addName "Toggle play"           $ spawn "mpc toggle")
+        , ("M-u n",                   addName "Fetch TV url"          $ spawn "newseries -p")
+        , ("M-u /",                   addName "Music player"          $ namedScratchpadAction myScratchPads "myMusic")
         ] ^++^
 
         subKeys "Scratchpads"
@@ -705,84 +712,219 @@ xmobarLay x = case x of
   :header-args: :tangle "~/.config/xmonad/src/MyLayoutHook.hs"
   :END:
 
+      Extending layouts for daily use:
+
+    - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-WindowNavigation.html][XMonad.Layout.WindowNavigation]] -- WindowNavigation is an extension to allow easy navigation of a workspace. See here for the new key bindings. TODO alternative for =windows W.focusUp=
+    - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-LimitWindows.html][XMonad.Layout.LimitWindows]] -- A layout modifier that limits the number of windows that can be =shown=. My screen is not all that big, more then four windows is silly in most cases. Notice that the layout =shows= four windows, the other ones are still there, just not shown!
+
+    Magnifing a layout:
+
+    - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-Magnifier.html][XMonad.Layout.Magnifier]] -- This is a layout modifier that will make a layout increase the size of the window that has focus.
+    - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-ResizableTile.html][XMonad.Layout.ResizableTile]] -- More useful tiled layout that allows you to change a width/height of window.
+
+    I use this to flip back and forth between a video, playing at 2/3d of the screen and a terminal, also at 2/3d where I follow the lesson / video. Uses ref:resize and ref:magnify
+
+    Floating windows
+
+
+    [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-PerWorkspace.html#v:onWorkspace][XMonad.Layout.PerWorkspace]] -- Configure layouts on a per-workspace basis: use layouts and apply layout modifiers selectively, depending on the workspace.
+
+
   Module declaration:
 
   #+begin_src haskell -n
-    {-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
+{-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
 
-    module MyLayoutHook
-    (myLayoutHook)
-    where
+module MyLayoutHook
+(myLayoutHook)
+where
 
-    import XMonad.Hooks.ManageDocks (avoidStruts)
-    import XMonad.Layout
-    import XMonad.Layout.MultiToggle
-    import XMonad.Layout.MultiToggle.Instances
-    import XMonad.Layout.NoBorders
-    import XMonad.Layout.Renamed
-    import XMonad.Layout.ResizableTile
-    import XMonad.Layout.Spacing
-    import XMonad.Layout.Tabbed
-    import XMonad.Layout.ThreeColumns
+--Layouts
+import XMonad.Layout.Tabbed
+import XMonad.Layout.ThreeColumns
+import XMonad.Layout.GridVariants (Grid(Grid))
+import XMonad.Layout.Simplest
+import XMonad.Layout.SimplestFloat
+import XMonad.Layout.Tabbed
+import XMonad.Layout.DwmStyle
+import XMonad.Layout.Accordion
+import XMonad.Layout.BinarySpacePartition (emptyBSP)
+import XMonad.Layout.Decoration           (Decoration,
+                                           DefaultShrinker)
+import XMonad.Layout.Simplest             (Simplest)
+import XMonad.Layout.Spiral
 
-    import XMonad.Layout.ShowWName
+--Support
+import XMonad.Layout.Master
+import XMonad.Layout.Magnifier
+import XMonad.Layout.LimitWindows (limitWindows, increaseLimit, decreaseLimit)
 
-    import Options
+import XMonad.Hooks.ManageDocks (avoidStruts)
+import XMonad.Layout
+
+import XMonad.Layout.ToggleLayouts -- (ToggleLayout (..),(toggleLayouts)
+import XMonad.Layout.MultiToggle
+import XMonad.Layout.MultiToggle.Instances
+-- import XMonad.Layout.MultiToggle.Instances (StdTransformers(NBFULL, MIRROR, NOBORDERS))
+
+import XMonad.Layout.NoBorders --needed?
+
+import XMonad.Layout.Renamed
+import XMonad.Layout.ResizableTile
+import XMonad.Layout.Spacing
+import XMonad.Layout.Gaps
+import XMonad.Layout.Fullscreen
+
+import XMonad.Layout.PerWorkspace
+
+import XMonad.Layout.ResizableTile
+--variants
+import           XMonad.Layout.LayoutModifier       (ModifiedLayout)
+--
+
+--
+
+
+-- import XMonad.Layout.WindowNavigation
+
+
+    --------------------------
+
+--Misc
+import XMonad.Layout.ShowWName
+
+import Options
 
   #+end_src
 
   Layouts:
 
+#+begin_src haskell -n
+
+tall    = renamed [Replace "Tall"]
+        $ mySpacing
+        $ avoidStruts
+        $ ResizableTall 1 (3/100) (1/2) []
+wide    = renamed [Replace "wide"]
+        $ mySpacing
+        $ avoidStruts
+        $ Mirror tall
+full    = renamed [Replace "full"]
+        $ avoidStruts
+        $ Full
+three   = renamed [Replace "Three"]
+        $ mySpacing
+        $ avoidStruts
+        $ ThreeColMid 1 (3/100) (1/2)
+grid    = renamed [Replace "grid"]
+         -- $ windowNavigation
+         -- $ addTabs shrinkText myTabTheme
+         -- $ subLayout [0,1,2] (smartBorders Simplest)
+        $ limitWindows 4
+         -- $ mySpacing
+         -- $ mkToggle (single MIRROR)
+        $ Grid (16/10)
+tabs    = renamed [Replace "Tabs"]
+        $ avoidStruts
+        $ tabbed shrinkText myTabConfig
+magnify = renamed [Replace "magnify"]
+           -- $ windowNavigation
+           -- $ addTabs shrinkText myTabTheme
+           -- $ subLayout [0,1,2] (smartBorders Simplest)
+        $ magnifier
+           -- $ limitWindows 2
+           -- $ mySpacing 8
+        $ ResizableTall 1 (3/100) (1/2) []
+floats  = renamed [Replace "floats"]
+        -- $ windowNavigation
+      -- $ addTabs shrinkText myTabTheme
+             -- $ subLayout [] (smartBorders Simplest)
+        $ limitWindows 20 simplestFloat
+sTabbed = renamed [Replace "tabbed"]
+        $ simpleTabbed
+readLayout = renamed [Replace "2/3"] (dwmStyle shrinkText myTabConfig (mastered (1/100) (2/3) Accordion))
+-- tabLayout :: ModifiedLayout (Decoration TabbedDecoration DefaultShrinker) Simplest Window
+tabLayout = tabbed shrinkText myTabConfig
+vimLayout = Mirror (mastered (1/100) (4/5) Accordion)
+tiled = Tall nmaster delta ratio
+delta = 3/100
+ratio = 1/2
+nmaster = 1
+
+#+end_src
+
+myLayoutHook:
+
+#+begin_src haskell -n
+myLayoutHook = avoidStruts
+             -- $ toggleLayouts zoom defaultLayouts
+             $ smartBorders
+             $ showWName'  myShowWNameTheme
+             $ mkToggle (single NBFULL)
+             $ mkToggle (single MIRROR)
+             $ onWorkspace "emacs" Simplest
+             -- $ onWorkspace wsWEB webLayouts
+             $ defaultLayouts
+             where
+               --vidProj  = [wsPythonP, wsHaskell, wsMOV]
+               --codeProj = [wsKBorgP, wsXmonadP]
+               webLayouts  =          tall ||| three |||  tabs
+               --codeLayouts = noBorders magnify ||| full ||| tall
+               --maxLayouts  =          full ||| magnify
+               defaultLayouts = tall
+                                ||| readLayout
+                                ||| tabLayout
+                                ||| vimLayout
+                                ||| tiled
+                                ||| tabs
+                                -- ||| sTabbed
+                                ||| three
+                                ||| Simplest
+                                ||| full
+                                ||| grid
+                                ||| wide
+                                ||| floats
+                                ||| magnify
+
+  #+end_src
+
+Gaps and spacing:
+
+#+begin_src haskell -n
+-- Gaps around and between windows
+-- Changes only seem to apply if I log out then in again
+-- Dimensions are given as (Border top bottom right left)
+mySpacing = spacingRaw True                -- Only for >1 window
+                       -- The bottom edge seems to look narrower than it is
+                       (Border 0 15 10 10) -- Size of screen edge gaps
+                       True                -- Enable screen edge gaps
+                       (Border 5 5 5 5)    -- Size of window gaps
+                       True                -- Enable window gaps
+
+myTabConfig ::  Theme
+myTabConfig = def { fontName            = myFont
+                  , activeColor         = myTabActiveColor
+                  , inactiveColor       = myTabInactiveColor
+                  , activeBorderColor   = myTabActiveBorderColor
+                  , inactiveBorderColor = myTabInactiveBorderColor
+                  , activeTextColor     = myTabActiveTextColor
+                  , inactiveTextColor   = myTabInactiveTextColor
+                  }
+
+#+end_src
+
+  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-ShowWName.html][ShowName]]: This is a layout modifier that will show the workspace name (on entering a workspace). Especially usefull as I don't write workspace names in my bar. The workspace name is a project, defined under [[*src/MyWorkspaces][src/MyWorkspaces]].
+
+  #+Caption: ShowName configation
   #+begin_src haskell -n
 
-    -- Gaps around and between windows
-    -- Changes only seem to apply if I log out then in again
-    -- Dimensions are given as (Border top bottom right left)
-    mySpacing = spacingRaw True                -- Only for >1 window
-                           -- The bottom edge seems to look narrower than it is
-                           (Border 0 15 10 10) -- Size of screen edge gaps
-                           True                -- Enable screen edge gaps
-                           (Border 5 5 5 5)    -- Size of window gaps
-                           True                -- Enable window gaps
-
-    myTabConfig = def { fontName            = myFont
-                      , activeColor         = myTabActiveColor
-                      , inactiveColor       = myTabInactiveColor
-                      , activeBorderColor   = myTabActiveBorderColor
-                      , inactiveBorderColor = myTabInactiveBorderColor
-                      , activeTextColor     = myTabActiveTextColor
-                      , inactiveTextColor   = myTabInactiveTextColor
-                      }
-
-    tall  = renamed [Replace "Tall"]
-          $ mySpacing
-          $ avoidStruts
-          $ ResizableTall 1 (3/100) (1/2) []
-
-    three = renamed [Replace "Three"]
-          $ mySpacing
-          $ avoidStruts
-          $ ThreeColMid 1 (3/100) (1/2)
-
-    tabs  = renamed [Replace "Tabs"]
-          $ avoidStruts
-          $ tabbed shrinkText myTabConfig
-
-
-    myShowWNameTheme :: SWNConfig
-    myShowWNameTheme = def
-        { swn_font              = myMediumFont
-        , swn_fade              = 1.0
-        , swn_bgcolor           = base03
-        , swn_color             = base3
-        }
-
-    myLayoutHook = smartBorders
-                 $ showWName'  myShowWNameTheme
-                 $ avoidStruts
-    --           $ mySideDecorate  -- Messes up everything - I don't yet understand why
-                 $ mkToggle (single NBFULL)
-                 $ tall ||| three ||| tabs
+myShowWNameTheme :: SWNConfig
+myShowWNameTheme = def
+    { swn_font              = myMediumFont
+    , swn_fade              = 1.0
+    , swn_bgcolor           = base03
+    , swn_color             = base3
+    }
 
   #+end_src
 
@@ -857,7 +999,7 @@ manageSpecific = composeAll . concat $
     , [ role       =? "gimp-file-open"      --> doRectFloat (W.RationalRect 0.3 0.3 0.9 0.9) ]
     , [ className  =? "Gimp"                --> doCenterFloat]
 
-    -- , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
+    , [ className  =? "zoom" <&&> titleContains z --> doFloat | z <- myZoomFloats ]
     , [ isZoomNotification                        --> doFloat ]
 
     , [ className  =? "Chromium" <&&> role =? "GtkFileChooserDialog" --> largeFloat]
@@ -2216,6 +2358,13 @@ shoot && notify
 
    #+end_src
 
+* Thanks
+
+  Monkey see, monkey do:
+
+  - [[https://github.com/pjones/xmonadrc][pjones/xmonadrc@github]] - MyWorkspaces is based on his system, his is nicer , though
+  - [[https://github.com/altercation/dotfiles-tilingwm][Ethan Schoonover]], a very nice setup on Github. See also on [[https://www.youtube.com/watch?v=70IxjLEmomg][Youtube]].
+  - [[https://github.com/quarkQuark/dotfiles][QuarkQuark]], my setup started out as his'.
 * COMMENT Document settings
   This makes the identation stay the same over multiple blocks.
 
