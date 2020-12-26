@@ -1,11 +1,16 @@
 #+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil
-#+options: f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
-#+options: timestamp:t title:t toc:t todo:t |:t
-#+title: Literal XMonad - and support
+#+options: f:t inline:t num:nil p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:1 todo:t |:t
+#+OPTIONS: html-style:nil :html-head-include-scripts nil
+#+title: Literal XMonad
 #+date: <2020-12-24 Thu>
 #+PROPERTY: header-args  :mkdirp yes
-#+HTML_HEAD: <link href="theme.css" rel="stylesheet">
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="res/org.css"/>
+
+**Note:** The source of this document does not always look nice, but otherwise my haskell sources wouldn't line up correctly
+
+Use Emacs to export this configuration, but be carefull as it might also overwrite other settings!
 
 * Build Xmonad
 
@@ -100,7 +105,7 @@
 
 ** Body
 
-   Imports for app/Main.hs:
+  *Modules needed:*
 
    #+begin_src haskell -n
      import XMonad                                   -- standard xmonad library
@@ -154,6 +159,8 @@
   :END:
 
   The idea is to set up all the defaults here, instead all over the place. So far my success has been limited.
+
+  *Modules needed:*
 
   #+begin_src haskell
     module Options where
@@ -308,6 +315,8 @@
 
   - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedActions.html][XMonad.Util.NamedActions]] -- Which is used by the [[*src/MyCheatsheet][cheatsheet]].
 
+  *Modules needed:*
+
   #+CAPTION: MyKeys definition
   #+begin_src haskell -n
     module MyKeys
@@ -336,6 +345,8 @@
     import qualified XMonad.Actions.Search as S
 
     import XMonad.Actions.DynamicProjects       -- to switch to projects
+
+    import XMonad.Actions.SinkAll               -- make all windows unfloat
 
     import Options                              -- defaults
     import MyScratchpads
@@ -372,6 +383,7 @@
 
   =myKeys= contains all the key bindings, also, we pre-define longer commands:
 
+  #+CAPTION: myKeys configuration
   #+begin_src haskell -n
     myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
     myKeys conf = let
@@ -393,8 +405,7 @@
 
   #+end_src
 
-  Core Xmonad bindings:
-
+  #+CAPTION: Core Xmonad bindings
   #+begin_src haskell -n
         subKeys "Core"
         [ ("M-S-q",                   addName "Quit XMonad (logout)"   $ quitXmonad)
@@ -413,39 +424,8 @@
   - Layouts
   - Windows
 
-  - [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-MultiToggle-Instances.html][XMonad.Layout.MultiToggle.Instances]], key bindings for [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-MultiToggle.html][XMonad.Layout.MultiToggle]]:
-
-    Dynamically apply and unapply transformers to your window layout. This can be used to rotate your window layout by 90 degrees, or to make the currently focused window occupy the whole screen ("zoom in") then undo the transformation ("zoom out").
-
-    - =FULL=         Switch to Full layout
-    - =NBFULL=       Switch to Full with no borders (=Super-f=)
-    - =MIRROR=        Mirror the current layout
-    - =NOBORDERS=    Remove borders
-    - =SMARTBORDERS= Apply smart borders
-
+  #+CAPTION: Layouts and Windows
   #+begin_src haskell -n
-        subKeys "Screens" (
-        [("M-"++key,                  addName ("Focus screen "++show sc)   $ viewScreen sc)
-            | (key,sc) <- zip ["w","e","r"] [0..]
-        ] ^++^
-        [("M-S-"++key,                addName ("Send to screen "++show sc) $ shiftScreen sc)
-            | (key,sc) <- zip ["w","e","r"] [0..]
-        ]) ^++^
-
-        subKeys "Workspaces" (
-        [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
-            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
-        ] ^++^
-        [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
-            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
-        ] ^++^
-        [ ("M-<Left>"     , addName "Next workspace"              $ prevWS)
-        , ("M-<Right>"    , addName "Previous workspace"          $ nextWS)
-        , ("M3-<Tab>"     , addName "toggle last workspace"       $ toggleWS)
-        , ("M-S-<Left>"   , addName "Shift to next workspace"     $ shiftToNext >> prevWS)
-        , ("M-S-<Right>"  , addName "Shift to previous workspace" $ shiftToNext >> nextWS)
-        ]) ^++^
-
         subKeys "Layouts"
         [ ("M-h",                     addName "Shrink master"          $ sendMessage Shrink)
         , ("M-l",                     addName "Expand master"          $ sendMessage Expand)
@@ -467,12 +447,13 @@
         , ("M-S-k",                   addName "Swap previous"          $ windows W.swapUp)
         , ("M-<Return>",              addName "Swap master"            $ windows W.swapMaster)
         , ("M-t",                     addName "Unfloat"                $ unFloat)
+        , ("M-S-t",                   addName "Unfloat All"            $ sinkAll)
         ] ^++^
 
   #+end_src
 
-  Projects:
-
+  #+CAPTION: Projects
+  #+NAME: Project keys
   #+begin_src haskell -n
         subKeys "Projects"
         [ ("M-w"   , addName "switch Project Prompt"   $ switchProjectPrompt warmPromptTheme)
@@ -615,6 +596,8 @@
   :header-args: :tangle "~/.config/xmonad/src/MyBar.hs"
   :END:
 
+  *Modules needed:*
+
   #+CAPTION: MyBar definition
   #+begin_src haskell -n
 module MyBar
@@ -726,12 +709,10 @@ xmobarLay x = case x of
 
     Floating windows
 
-
     [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-PerWorkspace.html#v:onWorkspace][XMonad.Layout.PerWorkspace]] -- Configure layouts on a per-workspace basis: use layouts and apply layout modifiers selectively, depending on the workspace.
 
-
-  Module declaration:
-
+  *Modules needed:*
+  #+Caption: Layout modules
   #+begin_src haskell -n
 {-# LANGUAGE NoMonomorphismRestriction, FlexibleContexts #-}
 
@@ -798,7 +779,7 @@ import Options
   #+end_src
 
   Layouts:
-
+#+Caption: Layout definitions
 #+begin_src haskell -n
 
 tall    = renamed [Replace "Tall"]
@@ -853,8 +834,7 @@ nmaster = 1
 
 #+end_src
 
-myLayoutHook:
-
+#+Caption: myLayoutHook
 #+begin_src haskell -n
 myLayoutHook = avoidStruts
              -- $ toggleLayouts zoom defaultLayouts
@@ -888,8 +868,7 @@ myLayoutHook = avoidStruts
 
   #+end_src
 
-Gaps and spacing:
-
+#+Caption: Gaps and spacing
 #+begin_src haskell -n
 -- Gaps around and between windows
 -- Changes only seem to apply if I log out then in again
@@ -913,7 +892,7 @@ myTabConfig = def { fontName            = myFont
 
 #+end_src
 
-  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-ShowWName.html][ShowName]]: This is a layout modifier that will show the workspace name (on entering a workspace). Especially usefull as I don't write workspace names in my bar. The workspace name is a project, defined under [[*src/MyWorkspaces][src/MyWorkspaces]].
+  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Layout-ShowWName.html][XMonad-Layout-ShowWName]]: This is a layout modifier that will show the workspace name (on entering a workspace). Especially usefull as I don't write workspace names in my bar. Every workspace name is a project, defined under [[*src/MyWorkspaces][src/MyWorkspaces]].
 
   #+Caption: ShowName configation
   #+begin_src haskell -n
@@ -933,7 +912,7 @@ myShowWNameTheme = def
   :header-args: :tangle "~/.config/xmonad/src/MyManageHook.hs"
   :END:
 
-  Module declaration:
+  *Modules needed:*
 
   #+begin_src haskell -n
 module MyManageHook
@@ -1065,7 +1044,7 @@ zoomFloat = doFloatDep move
 
   - Source: [[https://github.com/quarkQuark/dotfiles/tree/49ab839c7c8ad33c728a1238a2af9ce860abe5dc/.config/xmonad][github.com/quarkQuark/dotfiles]]
 
-  Module declaration:
+  *Modules needed:*
 
   #+begin_src haskell -n
     module MyCheatsheet
@@ -1198,6 +1177,8 @@ zoomFloat = doFloatDep move
 
   [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-NamedScratchpad.html][XMonad.Util.NamedScratchpad]] --
 
+  *Modules needed:*
+
   #+begin_src haskell -n
     module MyScratchpads
     (myScratchPads)
@@ -1267,8 +1248,17 @@ zoomFloat = doFloatDep move
   :header-args:  :tangle "~/.config/xmonad/src/MyWorkspaces.hs"
   :END:
 
-  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-DynamicProjects.html][XMonad.Actions.DynamicProjects]]
+  [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-DynamicProjects.html][XMonad.Actions.DynamicProjects]] -- (From the documentation:) Imbues workspaces with additional features so they can be treated as individual project areas.
 
+  Instead of using generic workspace names such as 3 or work, DynamicProjects allows you to dedicate workspaces to specific projects and then switch between projects easily.
+
+  A project is made up of a name, working directory, and a start-up hook. When you switch to a workspace, DynamicProjects changes the working directory to the one configured for the matching project. If the workspace doesn't have any windows, the project's start-up hook is executed. This allows you to launch applications or further configure the workspace/project.
+
+  When using the switchProjectPrompt function, workspaces are created as needed. This means you can create new project spaces (and therefore workspaces) on the fly. (These dynamic projects are not preserved across restarts.)
+
+  *Modules needed:*
+
+  #+Caption: Workspace modules
   #+begin_src haskell -n
   module MyWorkspaces
     ( projects,
@@ -1281,11 +1271,33 @@ zoomFloat = doFloatDep move
   import XMonad.Layout.LayoutCombinators (JumpToLayout (..))
   import XMonad.Util.SpawnOnce
 
-  import Options
+  import Options                                                -- local settings
   #+end_src
 
-    Workspaces:
+  To set up a new =project=, use the following template:
 
+  #+Caption: Project template
+  #+begin_example haskell
+      { projectName = "browsers",              (1)
+        projectDirectory = "~/Downloads",      (2)
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "Tall")    (3)
+          spawn "qutebrowser"                  (4)
+      },
+  #+end_example
+
+  1. =Project name= this field is used to switch to the workspace, and in the notification area (if not overwritten with an icon)
+  2. =Project directory=
+  3. Default layout
+  4. Using /spawn/ start default applications in /that/ workspace. Terminals will open by default in the directory set in (2)
+
+  TODO class needed?
+
+  **Key bindings** - [[Project keys][Project keys]]
+
+  =Super+<number>= is set to the first ten projects, the others can be reached by =Super-w=.
+
+  #+Caption: My projects
   #+begin_src haskell -n
   projects :: [Project]
   projects =
@@ -1345,12 +1357,27 @@ zoomFloat = doFloatDep move
           -- spawn "alaritty -e ranger"
           spawn (myTerminal ++ " -t tv2 --class tv -e ranger")
       }
+      Project
+      { projectName = "zoom",
+        projectDirectory = "~/Downloads",
+        projectStartHook = Just $ do
+          sendMessage (JumpToLayout "2/3")
+          spawn "zoom"
+          spawn (myTerminal ++ " --class zoom")
+      }
     ]
 
+  #+end_src
+
+  #+Caption: Workspace helper scripts
+  #+begin_src haskell -n
   -- | Names of my workspaces.
   names :: [WorkspaceId]
   names = map projectName projects
 
+  -- | open terminal in current project environment (unsafeSpawn)
+  projRunInTerm :: String -> String -> X ()
+  projRunInTerm options command = asks (terminal . config) >>= \t -> unsafeSpawn $ t ++ " " ++ " --class " ++ activateProject  ++ options ++ " -e " ++ command
   #+end_src
 
 * External scripts
