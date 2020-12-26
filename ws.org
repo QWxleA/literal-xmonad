@@ -427,6 +427,31 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
   - Layouts
   - Windows
 
+  #+CAPTION: Screens and Workspaces
+  #+begin_src haskell -n
+        subKeys "Screens" (
+        [("M-"++key,                  addName ("Focus screen "++show sc)   $     viewScreen sc)
+            | (key,sc) <- zip ["w","e","r"] [0..]
+        ] ^++^
+        [("M-S-"++key,                addName ("Send to screen "++show sc) $     shiftScreen sc)
+            | (key,sc) <- zip ["w","e","r"] [0..]
+        ]) ^++^
+
+        subKeys "Workspaces" (
+        --[ ("M-u",                     addName "View next"              $ )
+        --, ("M-i,",                    addName "View previous"          $ )
+        --, ("M-S-u",                   addName "Send to next"           $ )
+        --, ("M-S-i",                   addName "Send to previous"       $ )
+        --] ^++^
+        [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
+            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        ] ^++^
+        [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
+            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        ]) ^++^
+
+  #+end_src
+
   #+CAPTION: Layouts and Windows
   #+begin_src haskell -n
         subKeys "Layouts"
@@ -469,6 +494,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   Note: =M-S-<Return>= is a fallback, I broke my /menu/ binding a couple of times.
 
+  #+CAPTION: Applications
   #+begin_src haskell -n
         subKeys "Applications"
         [ ("M-S-<Return>",            addName "Terminal emulator"      $ spawn myTerminal)
@@ -530,6 +556,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   (Defined [[*src/Options.hs][here]])
 
+  #+CAPTION: Prompts
   #+begin_src haskell -n
         subKeys "Prompts"
         [ ("M3-m", addName "Man-page Prompt" $ manPrompt myPromptTheme)] ^++^
@@ -541,6 +568,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   Keybinding to display the keybinding cheatsheet
 
+  #+CAPTION: Cheatsheet
   #+begin_src haskell -n
     myCheatsheetKey :: (KeyMask, KeySym)
     myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
@@ -621,7 +649,7 @@ import Options
 myLogHook :: Handle -> X ()
 myLogHook h = dynamicLogWithPP $ xmobarPP
                   { ppOutput          = hPutStrLn h
-                  , ppTitle           = xmobarColor active "" . shorten 50
+                  , ppTitle           = xmobarColor active "" . shorten 30
                   , ppVisible         = xmobarColor base0  "" . wrap "(" ")" . xmobarIcon
                   , ppUrgent          = xmobarColor red    "" . wrap " " " "
                   , ppSep             = xmobarColor red myNormalBorderColor " . "
@@ -1263,18 +1291,18 @@ zoomFloat = doFloatDep move
 
   #+Caption: Workspace modules
   #+begin_src haskell -n
-  module MyWorkspaces
-    ( projects,
-      names
-    )
-  where
+module MyWorkspaces
+  ( projects,
+    names
+  )
+where
 
-  import XMonad
-  import XMonad.Actions.DynamicProjects
-  import XMonad.Layout.LayoutCombinators (JumpToLayout (..))
-  import XMonad.Util.SpawnOnce
+import XMonad
+import XMonad.Actions.DynamicProjects
+import XMonad.Layout.LayoutCombinators (JumpToLayout (..))
+import XMonad.Util.SpawnOnce
 
-  import Options                                                -- local settings
+import Options                                                -- local settings
   #+end_src
 
   To set up a new =project=, use the following template:
@@ -1302,85 +1330,85 @@ zoomFloat = doFloatDep move
 
   #+Caption: My projects
   #+begin_src haskell -n
-  projects :: [Project]
-  projects =
-    [ Project
-      { projectName = "browsers",
-        projectDirectory = "~/Downloads",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "qutebrowser"
-      },
-      Project
-      { projectName = "emacs",
-        projectDirectory = "~/",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "emacsclient -c"
-      },
-      Project
-      { projectName = "xmonad",
-        projectDirectory = "~/Projects/WS",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "alacritty"
-      },
-      Project
-      { projectName = "term",
-        projectDirectory = "~/",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "alacritty"
-      },
-      Project
-      { projectName = "scratch",
-        projectDirectory = "~/Desktop",
-        projectStartHook = Nothing
-      },
-      Project
-      { projectName = "chat",
-        projectDirectory = "~/Downloads",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "alacritty -e tmux attach"
-          spawn "alacritty"
-      },
-      Project
-      { projectName = "docs",
-        projectDirectory = "~/Documents/",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tall")
-          spawn "alacritty"
-      },
-      Project
-      { projectName = "tv",
-        projectDirectory = "~/Video",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "Tabbed")
-          -- spawn "alaritty -e ranger"
-          spawn (myTerminal ++ " -t tv2 --class tv -e ranger")
-      }
-      Project
-      { projectName = "zoom",
-        projectDirectory = "~/Downloads",
-        projectStartHook = Just $ do
-          sendMessage (JumpToLayout "2/3")
-          spawn "zoom"
-          spawn (myTerminal ++ " --class zoom")
-      }
-    ]
+projects :: [Project]
+projects =
+  [ Project
+    { projectName = "browsers",
+      projectDirectory = "~/Downloads",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "qutebrowser"
+    },
+    Project
+    { projectName = "emacs",
+      projectDirectory = "~/",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "emacsclient -c"
+    },
+    Project
+    { projectName = "xmonad",
+      projectDirectory = "~/Projects/WS",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "alacritty"
+    },
+    Project
+    { projectName = "term",
+      projectDirectory = "~/",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "alacritty"
+    },
+    Project
+    { projectName = "scratch",
+      projectDirectory = "~/Desktop",
+      projectStartHook = Nothing
+    },
+    Project
+    { projectName = "chat",
+      projectDirectory = "~/Downloads",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "alacritty -e tmux attach"
+        spawn "alacritty"
+    },
+    Project
+    { projectName = "docs",
+      projectDirectory = "~/Documents/",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tall")
+        spawn "alacritty"
+    },
+    Project
+    { projectName = "tv",
+      projectDirectory = "~/Video",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "Tabbed")
+        -- spawn "alaritty -e ranger"
+        spawn (myTerminal ++ " -t tv2 --class tv -e ranger")
+    },
+    Project
+    { projectName = "zoom",
+      projectDirectory = "~/Downloads",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "2/3")
+        spawn "zoom"
+        spawn (myTerminal ++ " --class zoom")
+    }
+  ]
 
   #+end_src
 
   #+Caption: Workspace helper scripts
   #+begin_src haskell -n
-  -- | Names of my workspaces.
-  names :: [WorkspaceId]
-  names = map projectName projects
+-- | Names of my workspaces.
+names :: [WorkspaceId]
+names = map projectName projects
 
-  -- | open terminal in current project environment (unsafeSpawn)
-  projRunInTerm :: String -> String -> X ()
-  projRunInTerm options command = asks (terminal . config) >>= \t -> unsafeSpawn $ t ++ " " ++ " --class " ++ activateProject  ++ options ++ " -e " ++ command
+-- | open terminal in current project environment (unsafeSpawn)
+--projRunInTerm :: String -> String -> X ()
+--projRunInTerm options command = asks (terminal . config) >>= \t -> unsafeSpawn $ t ++ " " ++ " --class " ++ activateProject  ++ options ++ " -e " ++ command
   #+end_src
 
 * External scripts
