@@ -36,7 +36,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     #set -e
 
     EXEC_PATH="$1"
-    ICON="~/Pictures/Icons/Xmonad-logo.svg.png"
+    ICON="~/Pictures/Icons/Xmonad-logo.png"
     echo "DB: EXEC_PATH: $EXEC_PATH"
 
     die() {
@@ -201,10 +201,10 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     myPdfReader      = "zathura"
     myPrintScreen    = "screenshotS"
     myAudiocontrol   = "pavucontrol"
-
-    data Bar = Taffybar | XMobar | Tint2 deriving (Eq)
-    myBar :: Bar
-    myBar = XMobar
+    myTop            = myTerminal ++ " -e htop"
+    myNews           = myTerminal ++ " -e newsboat"
+    myIrc            = myTerminal ++ " -e tmux attach"
+    myDu             = myTerminal ++ " -e ncdu ~"
 
     myMenu :: String
     myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
@@ -243,7 +243,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     myBorderWidth = 2
 
     -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
-    myTabActiveColor      = "#46D9FF"
+    myTabActiveColor         = "#46D9FF"
     myTabInactiveColor       = "#313846"
     myTabActiveBorderColor   = "#46D9FF"
     myTabInactiveBorderColor = "#282C34"
@@ -292,7 +292,6 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     myMediumFont = "xft:NotoSansMono Nerd Font:style=Regular:size=32:antialias=true:hinting=true"
     myLargeFont  = "xft:NotoSansMono Nerd Font:style=Bold:size=60:antialias=true:hinting=true"
 
-
   #+end_src
 
   Search engines, several from [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-Search.html][XMonad.Actions.Search]] + custom ones I regularly use:
@@ -305,17 +304,19 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     news     = S.searchEngine "news" "https://news.google.com/search?q="
     reddit   = S.searchEngine "reddit" "https://www.reddit.com/search/?q="
     urban    = S.searchEngine "urban" "https://www.urbandictionary.com/define.php?term="
+    fontawe  = S.searchEngine "font-awesome" "https://fontawesome.com/icons?d=gallery&q="
 
     searchList :: [(String, S.SearchEngine)]
-    searchList = [ ("g", S.google)
+    searchList = [ ("a", archwiki)
+                 , ("c", S.hackage)
+                 , ("f", fontawe)
+                 , ("g", S.google)
                  , ("h", S.hoogle)
-                 , ("w", S.wikipedia)
                  , ("i", S.imdb)
-                 , ("a", archwiki)
                  , ("n", news)
                  , ("r", reddit)
                  , ("u", urban)
-                 , ("c", S.hackage)
+                 , ("w", S.wikipedia)
                  ]
   #+end_src
 
@@ -332,61 +333,71 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: MyKeys definition
   #+begin_src haskell -n
-    module MyKeys
-    (myKeys,myCheatsheetKey)
-    where
+module MyKeys
+(myKeys,myCheatsheetKey)
+where
 
-    import Data.Char (isSpace, toUpper) --isSpace?
-    import System.Exit -- (exitSuccess)
-    import XMonad
+import Data.Char (isSpace, toUpper) --isSpace?
+import System.Exit -- (exitSuccess)
+import XMonad
 
-    import XMonad.Hooks.ManageDocks             -- show/hide xmobar
+import XMonad.Hooks.ManageDocks             -- show/hide xmobar
 
-    import XMonad.Layout.MultiToggle
-    import XMonad.Layout.MultiToggle.Instances
-    import XMonad.Layout.ResizableTile
-    import qualified XMonad.StackSet as W
-    import XMonad.Actions.CycleWS
+import XMonad.Layout.MultiToggle
+import XMonad.Layout.MultiToggle.Instances
+import XMonad.Layout.ResizableTile
+import qualified XMonad.StackSet as W
 
-    import XMonad.Util.EZConfig
-    import XMonad.Util.NamedActions
-    import XMonad.Actions.ShowText              -- (ref:showTextM)
-    import XMonad.Util.NamedScratchpad
+import XMonad.Actions.CycleWS               -- move around WS
+import XMonad.Util.WorkspaceCompare         -- custom WS functions filtering NSP
 
-    import XMonad.Prompt
-    import XMonad.Prompt.ConfirmPrompt          -- don't just hard quit
-    import XMonad.Prompt.FuzzyMatch             -- (ref:fuzzyM) TODO
-    import XMonad.Prompt.Man
-    import qualified XMonad.Actions.Search as S
+import XMonad.Util.EZConfig
+import XMonad.Util.NamedActions
+import XMonad.Actions.ShowText              -- (ref:showTextM)
+import XMonad.Util.NamedScratchpad
 
-    import XMonad.Actions.DynamicProjects       -- to switch to projects
+import XMonad.Prompt
+import XMonad.Prompt.ConfirmPrompt          -- don't just hard quit
+import XMonad.Prompt.FuzzyMatch             -- (ref:fuzzyM) TODO
+import XMonad.Prompt.Man
+import qualified XMonad.Actions.Search as S
 
-    import XMonad.Actions.SinkAll               -- make all windows unfloat
+import XMonad.Actions.DynamicProjects       -- to switch to projects
 
-    import Options                              -- defaults
-    import MyScratchpads
+import XMonad.Actions.SinkAll               -- make all windows unfloat
+
+import Options                              -- defaults
+import MyScratchpads
 
   #+end_src
 
   #+CAPTION: Help functions
   #+begin_src haskell -n
-    -- Convert multiword strings to arguments (concatenate with delimiters)
-    -- This makes sure my shell scripts correctly interpret their arguments
-    args :: String -> [String] -> String
-    args command arguments = command ++ " " ++ unwords (map show arguments)
+-- Convert multiword strings to arguments (concatenate with delimiters)
+-- This makes sure my shell scripts correctly interpret their arguments
+args :: String -> [String] -> String
+args command arguments = command ++ " " ++ unwords (map show arguments)
 
-    quitXmonad :: X ()
-    quitXmonad = confirmPrompt hotPromptTheme "exit"
-      $ io (exitWith ExitSuccess)
+quitXmonad :: X ()
+quitXmonad = confirmPrompt hotPromptTheme "exit"
+  $ io (exitWith ExitSuccess)
 
-    rebuildXmonad :: X ()
-    rebuildXmonad = do
-      -- spawn "xmonad --recompile && xmonad --restart"
-      spawn myBuildScript
+rebuildXmonad :: X ()
+rebuildXmonad = do
+  -- spawn "xmonad --recompile && xmonad --restart"
+  spawn myBuildScript
 
-    restartXmonad :: X ()
-    restartXmonad = do
-      spawn "xmonad --restart"
+restartXmonad :: X ()
+restartXmonad = do
+  spawn "xmonad --restart"
+
+nextNonEmptyWS = findWorkspace getSortByIndexNoSP Next HiddenNonEmptyWS 1
+    >>= \t -> (windows . W.view $ t)
+prevNonEmptyWS = findWorkspace getSortByIndexNoSP Prev HiddenNonEmptyWS 1
+    >>= \t -> (windows . W.view $ t)
+getSortByIndexNoSP =
+    fmap (.namedScratchpadFilterOutWorkspace) getSortByIndex
+
 
   #+end_src
 
@@ -400,67 +411,70 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: myKeys configuration
   #+begin_src haskell -n
-    myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
-    myKeys conf = let
+myKeys :: XConfig l -> [((KeyMask, KeySym), NamedAction)]
+myKeys conf = let
 
-        subKeys name list = subtitle name : mkNamedKeymap conf list
+    subKeys name list = subtitle name : mkNamedKeymap conf list
 
-        -- Abbreviations for certain actions
-        menuEditScript         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
-        menuEditConfig         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
+    -- Abbreviations for certain actions
+    menuEditScript         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
+    menuEditConfig         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
 
-        viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
-        shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
-        unFloat               = withFocused $ windows . W.sink
+    viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
+    shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
+    unFloat               = withFocused $ windows . W.sink
 
-        volumeAdjust "toggle" = spawn "adjustVolumeS toggle"
-        volumeAdjust value    = spawn $ args "adjustVolumeS" $ words value
+    volumeAdjust "toggle" = spawn "adjustVolumeS toggle"
+    volumeAdjust value    = spawn $ args "adjustVolumeS" $ words value
 
-        in
+    in
 
   #+end_src
 
   #+CAPTION: Core Xmonad bindings
   #+begin_src haskell -n
-        subKeys "Core"
-        [ ("M-S-q"                   ,addName "Quit XMonad (logout)"   $ quitXmonad)
-        , ("M-q"                     ,addName "Recompile & restart"    $ rebuildXmonad)
-        , ("M-M1-q"                  ,addName "Restart"                $ restartXmonad)
-        , ("C-<Escape>"              ,addName "Application launcher"   $ spawn myAppM)
-        , ("M-S-c"                   ,addName "Close window"           $ kill)
-        ] ^++^
+    subKeys "Core"
+    [ ("M-S-q"                   ,addName "Quit XMonad (logout)"   $ quitXmonad)
+    , ("M-q"                     ,addName "Recompile & restart"    $ rebuildXmonad)
+    , ("M-M1-q"                  ,addName "Restart"                $ restartXmonad)
+    , ("C-<Escape>"              ,addName "Application launcher"   $ spawn myAppM)
+    ] ^++^
 
   #+end_src
 
   Window manager bindings, for these I use =Super=:
 
   - Screens
-  - Workspaces ([[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html][XMonad.Actions.CycleWS]])
+  - Workspaces ([[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html][XMonad.Actions.CycleWS]] for quickly jumping back and from)
   - Layouts
   - Windows
 
   #+CAPTION: Screens and Workspaces
   #+begin_src haskell -n
-        subKeys "Screens" (
-        [("M-"++key,                  addName ("Focus screen "++show sc)   $     viewScreen sc)
-            | (key,sc) <- zip ["w","e","r"] [0..]
-        ] ^++^
-        [("M-S-"++key,                addName ("Send to screen "++show sc) $     shiftScreen sc)
-            | (key,sc) <- zip ["w","e","r"] [0..]
-        ]) ^++^
+    subKeys "Screens" (
+    [("M-"++key,                  addName ("Focus screen "++show sc)   $     viewScreen sc)
+        | (key,sc) <- zip ["w","e","r"] [0..]
+    ] ^++^
+    [("M-S-"++key,                addName ("Send to screen "++show sc) $     shiftScreen sc)
+        | (key,sc) <- zip ["w","e","r"] [0..]
+    ]) ^++^
 
-        subKeys "Workspaces" (
-        --[ ("M-u",                     addName "View next"              $ )
-        --, ("M-i,",                    addName "View previous"          $ )
-        --, ("M-S-u",                   addName "Send to next"           $ )
-        --, ("M-S-i",                   addName "Send to previous"       $ )
-        --] ^++^
-        [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
-            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
-        ] ^++^
-        [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
-            | (key,i) <- zip [1..9] (XMonad.workspaces conf)
-        ]) ^++^
+    subKeys "Workspaces" (
+    --[ ("M-u",                     addName "View next"              $ )
+    --, ("M-i,",                    addName "View previous"          $ )
+    --, ("M-S-u",                   addName "Send to next"           $ )
+    --, ("M-S-i",                   addName "Send to previous"       $ )
+    --] ^++^
+    [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
+        | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+    ] ^++^
+    [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
+        | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+    ] ^++^
+    [ ("M3-<Tab>"           , addName "Toggle last workspace"       $ toggleWS' ["NSP"])
+    , ("M-<Right>"          , addName "Next non-empty workspace"    $ nextNonEmptyWS)
+    , ("M-<Left>"           , addName "Prev non-empty workspace"    $ prevNonEmptyWS)
+    ]) ^++^
 
   #+end_src
 
@@ -475,7 +489,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
         , ("M-."                     ,addName "Dec master windows"     $ sendMessage $ IncMasterN (-1))
         , ("M-<Space>"               ,addName "Next layout"            $ sendMessage NextLayout)
         , ("M-f"                     ,addName "Toggle fullscreen"      $ sendMessage $ Toggle NBFULL)
-        , ("M3-t"                    ,addName "Hide Xmobar"            $ sendMessage ToggleStruts)
+        , ("M-s"                     ,addName "Hide Xmobar"            $ sendMessage ToggleStruts)
         ] ^++^
 
         subKeys "Windows"
@@ -489,6 +503,8 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
         , ("M-<Return>"              ,addName "Swap master"            $ windows W.swapMaster)
         , ("M-t"                     ,addName "Unfloat"                $ unFloat)
         , ("M-S-t"                   ,addName "Unfloat All"            $ sinkAll)
+        , ("M-S-c"                   ,addName "Close window"           $ kill)
+        , ("M-<Backspace>"           ,addName "Close window"           $ kill)
         ] ^++^
 
   #+end_src
@@ -496,10 +512,10 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
   #+CAPTION: Projects
   #+NAME: Project keys
   #+begin_src haskell -n
-        subKeys "Projects"
-        [ ("M-w"   , addName "switch Project Prompt"   $ switchProjectPrompt warmPromptTheme)
-        , ("M-S-w" , addName "shift To Project Prompt" $ shiftToProjectPrompt warmPromptTheme)
-        ] ^++^
+    subKeys "Projects"
+    [ ("M-w"   , addName "switch Project Prompt"   $ switchProjectPrompt warmPromptTheme)
+    , ("M-S-w" , addName "shift To Project Prompt" $ shiftToProjectPrompt warmPromptTheme)
+    ] ^++^
 
   #+end_src
 
@@ -509,65 +525,68 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: Applications
   #+begin_src haskell -n
-        subKeys "Applications"
-        [ ("M-S-<Return>",            addName "Terminal emulator"      $ spawn myTerminal)
-        , ("M3-<Return>",             addName "Terminal emulator"      $ spawn myTerminal)
-        , ("M3-d",                    addName "Start apps (I3 dmenu)"  $ spawn myAppM)
-        , ("M3-e",                    addName "Text editor"            $ spawn myEditor)
-        , ("M3-w",                    addName "Web browser (minimal)"  $ spawn myBrowser)
-        , ("M3-S-w",                  addName "Chromium"               $ spawn "chromium")
-        , ("M3-C-w",                  addName "Chromium anonymous"     $ spawn "chromium --name=ignognito --incognito")
-        , ("M3-f",                    addName "Terminal file manager"  $ spawn myFileManager)
-        , ("M3-S-f",                  addName "Graphical file manager" $ spawn myGuiFileManager)
-        , ("M3-z",                    addName "Zoom"                   $ spawn "zoom")
-        ] ^++^
+    subKeys "Applications"
+    [ ("M-S-<Return>"            ,addName "Terminal emulator"      $ spawn myTerminal)
+    , ("M3-<Return>"             ,addName "Terminal emulator"      $ spawn myTerminal)
+    , ("M3-d"                    ,addName "Start apps (I3 dmenu)"  $ spawn myAppM)
+    , ("M3-e"                    ,addName "Text editor"            $ spawn myEditor)
+    , ("M3-f"                    ,addName "Terminal file manager"  $ spawn myFileManager)
+    , ("M3-h"                    ,addName "Htop"                   $ spawn myTop)
+    , ("M3-i"                    ,addName "Weechat"                $ spawn myIrc)
+    , ("M3-n"                    ,addName "Newsboat"               $ spawn myNews)
+    , ("M3-S-f"                  ,addName "Graphical file manager" $ spawn myGuiFileManager)
+    , ("M3-w"                    ,addName "Web browser (minimal)"  $ spawn myBrowser)
+    , ("M3-S-w"                  ,addName "Chromium"               $ spawn "chromium")
+    , ("M3-C-w"                  ,addName "Chromium anonymous"     $ spawn "chromium --name=ignognito --incognito")
+    , ("M3-z"                    ,addName "Zoom"                   $ spawn "zoom")
+    ] ^++^
 
-        subKeys "My (rofi) Scripts"
-        [ ("M3-p M3-p",                 addName "Edit scripts"        $ menuEditScript)
-        , ("M3-p M3-e",                 addName "Edit configs"        $ menuEditConfig)
-        ] ^++^
+    subKeys "My (rofi) Scripts"
+    [ ("M3-p M3-p",                 addName "Edit scripts"        $ menuEditScript)
+    , ("M3-p M3-e",                 addName "Edit configs"        $ menuEditConfig)
+    ] ^++^
 
   #+end_src
 
   #+CAPTION: Multimedia Keys
   #+begin_src haskell -n
-        subKeys "Multimedia Keys"
-        [ ("<XF86AudioMute>"         ,addName "Toggle mute"           $ volumeAdjust "togmute")
-        , ("M3-<Space>"              ,addName "Toggle mute"           $ volumeAdjust "togmute")
-        , ("<XF86AudioLowerVolume>"  ,addName "Decrease volume"       $ volumeAdjust "down")
-        , ("<XF86AudioRaiseVolume>"  ,addName "Increase volume"       $ volumeAdjust "up")
-        , ("<XF86MonBrightnessDown>" ,addName "Decrease brightness"   $ spawn "backlightS -dec 10")
-        , ("<XF86MonBrightnessUp>"   ,addName "Increase brightness"   $ spawn "backlightS -inc 10")
-        , ("<XF86TouchpadToggle>"    ,addName "Toggle Touchpad"       $ spawn "toggleTouchpadS")
-        , ("<Print>"                 ,addName "Take screenshot"       $ spawn (myPrintScreen ++ " -n"))
-        , ("S-<Print>"               ,addName "Take screenshot menu"  $ spawn myPrintScreen)
-        , ("M-u p"                   ,addName "Play music"            $ spawn "mpc play")
-        , ("M-u ,"                   ,addName "Play next"             $ spawn "mpc next")
-        , ("M-u ."                   ,addName "Play previous"         $ spawn "mpc prev")
-        , ("M-u <Space>"             ,addName "Toggle play"           $ spawn "mpc toggle")
-        , ("M-u n"                   ,addName "Fetch TV url"          $ spawn "newseries -p")
-        , ("M-u /"                   ,addName "Music player"          $ namedScratchpadAction myScratchPads "myMusic")
-        ] ^++^
+    subKeys "Multimedia Keys"
+    [ ("<XF86AudioMute>"         ,addName "Toggle mute"           $ volumeAdjust "togmute")
+    , ("M3-<Space>"              ,addName "Toggle mute"           $ volumeAdjust "togmute")
+    , ("<XF86AudioLowerVolume>"  ,addName "Decrease volume"       $ volumeAdjust "down")
+    , ("<XF86AudioRaiseVolume>"  ,addName "Increase volume"       $ volumeAdjust "up")
+    , ("<XF86MonBrightnessDown>" ,addName "Decrease brightness"   $ spawn "backlightS -dec 10")
+    , ("<XF86MonBrightnessUp>"   ,addName "Increase brightness"   $ spawn "backlightS -inc 10")
+    , ("<XF86TouchpadToggle>"    ,addName "Toggle Touchpad"       $ spawn "toggleTouchpadS")
+    , ("<Print>"                 ,addName "Take screenshot"       $ spawn (myPrintScreen ++ " -n"))
+    , ("S-<Print>"               ,addName "Take screenshot menu"  $ spawn myPrintScreen)
+    , ("M-u p"                   ,addName "Play music"            $ spawn "mpc play")
+    , ("M-u ,"                   ,addName "Play next"             $ spawn "mpc next")
+    , ("M-u ."                   ,addName "Play previous"         $ spawn "mpc prev")
+    , ("M-u <Space>"             ,addName "Toggle play"           $ spawn "mpc toggle")
+    , ("M-u n"                   ,addName "Fetch TV url"          $ spawn "newseries -p")
+    , ("M-u /"                   ,addName "Music player"          $ namedScratchpadAction myScratchPads "myMusic")
+    ] ^++^
 
   #+end_src
 
   #+CAPTION: Scratchpads
   #+begin_src haskell -n
-        subKeys "Scratchpads"
-        [ ("M-C-<Return>" ,addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
-        , ("M-`"          ,addName "Scratchpad"     $ namedScratchpadAction myScratchPads "scratchpad")
-        , ("M-z a"        ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
-        , ("M-z m"        ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
-        , ("M-z w"        ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
-        , ("M-z p"        ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
+    subKeys "Scratchpads"
+    [ ("M-C-<Return>" ,addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
+    , ("M-`"          ,addName "Scratchpad"     $ namedScratchpadAction myScratchPads "scratchpad")
+    , ("M-z a"        ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
+    , ("M-z m"        ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
+    , ("M-z w"        ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
+    , ("M-z p"        ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
 
-        , ("M3-<F1>"      ,addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
-        , ("M3-<F2>"      ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
-        , ("M3-<F3>"      ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
-        , ("M3-<F4>"      ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
-        , ("M3-<F5>"      ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
+    , ("M3-<F1>"      ,addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
+    , ("M3-<F2>"      ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
+    , ("M3-<F3>"      ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
+    , ("M3-<F4>"      ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
+    , ("M3-<F5>"      ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
 
-        ] ^++^
+    ] ^++^
 
   #+end_src
   Prompts (=H-m=, man-page) and Search-engines(=H-s= +):
@@ -585,11 +604,11 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: Prompts
   #+begin_src haskell -n
-        subKeys "Prompts"
-        [ ("M3-m" ,addName "Man-page Prompt" $ manPrompt myPromptTheme)] ^++^
+    subKeys "Prompts"
+    [ ("M3-m" ,addName "Man-page Prompt" $ manPrompt myPromptTheme)] ^++^
 
-        subKeys "Searchengines"
-        [ ("M3-s " ++ k ,addName "Search Engines"  $ S.promptSearch myPromptTheme f) | (k,f) <- searchList]
+    subKeys "Searchengines"
+    [ ("M3-s " ++ k ,addName "Search Engines"  $ S.promptSearch myPromptTheme f) | (k,f) <- searchList]
 
   #+end_src
 
@@ -597,8 +616,8 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: Cheatsheet
   #+begin_src haskell -n
-    myCheatsheetKey :: (KeyMask, KeySym)
-    myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
+myCheatsheetKey :: (KeyMask, KeySym)
+myCheatsheetKey = (myModMask .|. shiftMask, xK_slash)
 
   #+end_src
 
@@ -610,43 +629,43 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
   #+CAPTION: Prompt theme
   #+begin_src haskell -n
-    myPromptTheme :: XPConfig
-    myPromptTheme = def
-        { font                  = myFont
-        , bgColor               = base03
-        , fgColor               = active
-        , fgHLight              = base03
-        , bgHLight              = active
-        , borderColor           = base03
-        , promptBorderWidth     = 0
-        , height                = prompt
-        , promptKeymap          = emacsLikeXPKeymap
-        , position              = Top
-        -- , position            = CenteredAt { xpCenterY = 0.3, xpWidth = 0.3 }
-        , historySize           = 256
-        , historyFilter         = id
-        , defaultText           = []
-        -- , autoComplete        = Just 100000  -- set Just 100000 for .1 sec
-        , showCompletionOnTab   = False
-        -- , complCaseSensitivity  = ComplCaseSensitive False -- newer version :-(!
-        , searchPredicate       = fuzzyMatch   --
-        , sorter                = fuzzySort
-        , defaultPrompter       = id $ map toUpper  -- change prompt to UPPER
-        , alwaysHighlight       = True
-        , maxComplRows          = Just 15 -- Nothing -- Nothing is unlimited
-        }
+myPromptTheme :: XPConfig
+myPromptTheme = def
+    { font                  = myFont
+    , bgColor               = base03
+    , fgColor               = active
+    , fgHLight              = base03
+    , bgHLight              = active
+    , borderColor           = base03
+    , promptBorderWidth     = 0
+    , height                = prompt
+    , promptKeymap          = emacsLikeXPKeymap
+    , position              = Top
+    -- , position            = CenteredAt { xpCenterY = 0.3, xpWidth = 0.3 }
+    , historySize           = 256
+    , historyFilter         = id
+    , defaultText           = []
+    -- , autoComplete        = Just 100000  -- set Just 100000 for .1 sec
+    , showCompletionOnTab   = False
+    -- , complCaseSensitivity  = ComplCaseSensitive False -- newer version :-(!
+    , searchPredicate       = fuzzyMatch   --
+    , sorter                = fuzzySort
+    , defaultPrompter       = id $ map toUpper  -- change prompt to UPPER
+    , alwaysHighlight       = True
+    , maxComplRows          = Just 15 -- Nothing -- Nothing is unlimited
+    }
 
-    warmPromptTheme = myPromptTheme
-        { bgColor               = yellow
-        , fgColor               = base03
-        , position              = Top
-        }
+warmPromptTheme = myPromptTheme
+    { bgColor               = yellow
+    , fgColor               = base03
+    , position              = Top
+    }
 
-    hotPromptTheme = myPromptTheme
-        { bgColor               = red
-        , fgColor               = base3
-        , position              = Top
-        }
+hotPromptTheme = myPromptTheme
+    { bgColor               = red
+    , fgColor               = base3
+    , position              = Top
+    }
 
   #+end_src
 
@@ -735,16 +754,20 @@ xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
 -- Use shorter indicators for the layout
 xmobarLay :: String -> String
 xmobarLay x = case x of
-               --"Tall"  -> "<fn=0>T</fn>"
-               "Tall"    -> "<fn=1>\xf00b</fn>" -- th-list
-               "Three"   -> "<fn=0>3</fn>"
-               "Full"    -> "<fn=1>\xf0c8</fn>" -- square "<fn=0>F</fn>"
-               "magnify" -> "<fn=1>\xf00e</fn>" -- search-plus
-               "monocle" -> "<fn=1>\xf06e</fn>" -- eye
-               "Tabs"    -> "<fn=1>\xf0db</fn>" -- columns
-               --"Tabs"  -> "<fn=1>\xf03b</fn>"
-               "grid"    -> "<fn=1>\xf009</fn>" -- th-grid
-               "floats"  -> "<fn=1>\xf0c2</fn>" -- cloud
+               "Tall"                      -> "<fn=1>\xf00b</fn>" -- th-list
+               "Three"                     -> "<fn=0>3</fn>"
+               "Full"                      -> "<fn=1>\xf0c8</fn>" -- square "<fn=0>F</fn>"
+               "full"                      -> "<fn=1>\xf0c8</fn>" -- square "<fn=0>F</fn>"
+               "magnify"                   -> "<fn=1>\xf00e</fn>" -- search-plus
+               "monocle"                   -> "<fn=1>\xf06e</fn>" -- eye
+               "Tabs"                      -> "<fn=1>\xf0db</fn>" -- columns
+               "tabs"                      -> "<fn=1>\xf03b</fn>"
+               "grid"                      -> "<fn=1>\xf009</fn>" -- th-grid
+               "floats"                    -> "<fn=1>\xf0c2</fn>" -- cloud
+               "Tabbed Simplest"           -> "<fn=1>\xf03c</fn>" -- indent
+               "readLayout"                -> "<fn=0>read</fn>"   --
+               "vimLayout"                 -> "<fn=0>vim</fn>"    --
+               "Mirror Mastered Accordion" -> "<fn=0>acc</fn>" --
                _       -> x
 
 #+end_src
@@ -1279,7 +1302,7 @@ zoomFloat = doFloatDep move
                      w = 0.7
                      t = (1 - h)/2 -- centered top/bottom
                      l = (1 - w)/2 -- centered left/right
-        spawnMocp  = "alacritty --class myMusic -e ncmpcpp"
+        spawnMocp  = "alacritty --config-file $XDG_CONFIG_HOME/alacritty/alacritty-mpd.yml --class myMusic -e ncmpcpp"
         findMocp   = resource =? "myMusic"
         manageMocp = customFloating $ W.RationalRect l t w h
                    where
@@ -2202,6 +2225,7 @@ zshrc
 zshenv
 zprofile
 aliases
+mpv
 picom
 qutebrowser
 xmonad.hs
@@ -2214,7 +2238,7 @@ choice=`echo "$options" | $MENU_CMD "Edit config file: "`
 # Find the path to the chosen file
 case "$choice" in
     alacritty)
-        file="$HOME/.config/alacritty/base.yml"
+        file="$HOME/.config/alacritty/alacritty.yml"
     ;;
     zshrc)
         file="$ZDOTDIR/.zshrc"
@@ -2227,6 +2251,9 @@ case "$choice" in
     ;;
     picom)
         file="$HOME/.config/picom/picom.conf"
+    ;;
+    mpv)
+        file="$HOME/.config/mpv/mpv.conf"
     ;;
     zprofile)
         file="$ZDOTDIR/.zprofile"
