@@ -391,10 +391,13 @@ restartXmonad :: X ()
 restartXmonad = do
   spawn "xmonad --restart"
 
+nextNonEmptyWS :: X ()
 nextNonEmptyWS = findWorkspace getSortByIndexNoSP Next HiddenNonEmptyWS 1
     >>= \t -> (windows . W.view $ t)
+prevNonEmptyWS :: X ()
 prevNonEmptyWS = findWorkspace getSortByIndexNoSP Prev HiddenNonEmptyWS 1
     >>= \t -> (windows . W.view $ t)
+getSortByIndexNoSP :: X ([WindowSpace] -> [WindowSpace])
 getSortByIndexNoSP =
     fmap (.namedScratchpadFilterOutWorkspace) getSortByIndex
 
@@ -1263,69 +1266,69 @@ zoomFloat = doFloatDep move
 
   #+CAPTION: Scratchpads definition
   #+begin_src haskell -n
-    module MyScratchpads
-    (myScratchPads)
-    where
+module MyScratchpads
+(myScratchPads)
+where
 
-    import XMonad
-    import Options
-    import XMonad.Util.NamedScratchpad
-    import qualified XMonad.StackSet as W
+import XMonad
+import Options
+import XMonad.Util.NamedScratchpad
+import qualified XMonad.StackSet as W
   #+end_src
 
   #+CAPTION: Scratchpads listing
   #+begin_src haskell -n
-    ---------------------------------------------------------------------------
-    -- SCRATCHPADS                                                           --
-    ---------------------------------------------------------------------------
-    myScratchPads :: [NamedScratchpad]
-    myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
-                    , NS "myPavu" spawnPavu findPavu managePavu
-                    , NS "myMusic" spawnMocp findMocp manageMocp
-                    , NS "myWhatsApp" spawnWhatsApp findWhatsApp manageWhatsApp
-                    , NS "myProtonmail" spawnProtonmail findProtonmail manageProtonmail
-                    ]
-      where
-        spawnTerm  = myTerminal ++ " --class scratchPad"
-        findTerm   = resource =? "scratchPad"
-        manageTerm = customFloating $ W.RationalRect l t w h
-                   where
-                     h = 0.6
-                     w = 0.9
-                     t = 1 - h     -- bottom edge
-                     l = (1 - w)/2 -- centered left/right
-        spawnPavu  = myAudiocontrol ++ " --class myPavu"
-        findPavu   = resource =? "pavucontrol" --TODO how to catch second field?
-        managePavu = customFloating $ W.RationalRect l t w h
-                   where
-                     h = 0.7
-                     w = 0.7
-                     t = (1 - h)/2 -- centered top/bottom
-                     l = (1 - w)/2 -- centered left/right
-        spawnMocp  = "alacritty --config-file $XDG_CONFIG_HOME/alacritty/alacritty-mpd.yml --class myMusic -e ncmpcpp"
-        findMocp   = resource =? "myMusic"
-        manageMocp = customFloating $ W.RationalRect l t w h
-                   where
-                     h = 0.9
-                     w = 0.9
-                     t = 0.95 -h
-                     l = 0.95 -w
-        spawnWhatsApp  = "chromium --app=https://web.whatsapp.com/"
-        findWhatsApp   = appName =? "web.whatsapp.com"
-        manageWhatsApp = customFloating $ W.RationalRect l t w h
-                   where
-                     h = 0.9
-                     w = 0.9
-                     t = 0.95 -h
-                     l = 0.95 -w
-        spawnProtonmail  = "chromium --app=https://mail.protonmail.com/"
-        findProtonmail   = appName =? "mail.protonmail.com"
-        manageProtonmail = customFloating $ W.RationalRect l t w h
-                   where
-                     h = 0.9
-                     w = 0.9
-                     t = 0.95 -h
-                     l = 0.95 -w
+---------------------------------------------------------------------------
+-- SCRATCHPADS                                                           --
+---------------------------------------------------------------------------
+myScratchPads :: [NamedScratchpad]
+myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
+                , NS "myPavu" spawnPavu findPavu managePavu
+                , NS "myMusic" spawnMocp findMocp manageMocp
+                , NS "myWhatsApp" spawnWhatsApp findWhatsApp manageWhatsApp
+                , NS "myProtonmail" spawnProtonmail findProtonmail manageProtonmail
+                ]
+  where
+    spawnTerm  = myTerminal ++ " --class scratchPad"
+    findTerm   = resource =? "scratchPad"
+    manageTerm = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.6
+                 w = 0.9
+                 t = 1 - h     -- bottom edge
+                 l = (1 - w)/2 -- centered left/right
+    spawnPavu  = myAudiocontrol ++ " --class myPavu"
+    findPavu   = resource =? "pavucontrol" --TODO how to catch second field?
+    managePavu = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.7
+                 w = 0.7
+                 t = (1 - h)/2 -- centered top/bottom
+                 l = (1 - w)/2 -- centered left/right
+    spawnMocp  = "xterm -class myMusic -fa 'Source Code Pro' -fs 10 -e ncmpcpp"
+    findMocp   = className =? "myMusic"
+    manageMocp = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.9
+                 w = 0.9
+                 t = 0.95 -h
+                 l = 0.95 -w
+    spawnWhatsApp  = "chromium --app=https://web.whatsapp.com/"
+    findWhatsApp   = appName =? "web.whatsapp.com"
+    manageWhatsApp = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.9
+                 w = 0.9
+                 t = 0.95 -h
+                 l = 0.95 -w
+    spawnProtonmail  = "chromium --app=https://mail.protonmail.com/"
+    findProtonmail   = appName =? "mail.protonmail.com"
+    manageProtonmail = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.9
+                 w = 0.9
+                 t = 0.95 -h
+                 l = 0.95 -w
   #+end_src
 
 * src/MyWorkspaces
