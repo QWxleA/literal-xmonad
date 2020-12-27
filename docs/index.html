@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-12-26 Sat 19:17 -->
+<!-- 2020-12-27 Sun 14:56 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Literal XMonad</title>
@@ -75,7 +75,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 Install dependencies:
 </p>
 
-<pre class="example" id="orgacc7728">
+<pre class="example" id="org81f28f2">
   sudo pacman -S stack
 </pre>
 
@@ -93,7 +93,7 @@ Install dependencies:
     <span class="org-comment-delimiter">#</span><span class="org-comment">set -e</span>
 
     <span class="org-variable-name">EXEC_PATH</span>=<span class="org-string">"$1"</span>
-    <span class="org-variable-name">ICON</span>=<span class="org-string">"~/Pictures/Icons/Xmonad-logo.svg.png"</span>
+    <span class="org-variable-name">ICON</span>=<span class="org-string">"~/Pictures/Icons/Xmonad-logo.png"</span>
     <span class="org-builtin">echo</span> <span class="org-string">"DB: EXEC_PATH: $EXEC_PATH"</span>
 
     die() {
@@ -279,10 +279,10 @@ Default applications, scripts end with a capital <i>S</i>, like <code>screenshot
 <span class="linenr">10: </span>    myPdfReader      <span class="org-haskell-operator">=</span> <span class="org-string">"zathura"</span>
 <span class="linenr">11: </span>    myPrintScreen    <span class="org-haskell-operator">=</span> <span class="org-string">"screenshotS"</span>
 <span class="linenr">12: </span>    myAudiocontrol   <span class="org-haskell-operator">=</span> <span class="org-string">"pavucontrol"</span>
-<span class="linenr">13: </span>
-<span class="linenr">14: </span>    <span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Bar</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Taffybar</span> <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">XMobar</span> <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">Tint2</span> <span class="org-haskell-keyword">deriving</span> (<span class="org-haskell-constructor">Eq</span>)
-<span class="linenr">15: </span>    myBar <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Bar</span>
-<span class="linenr">16: </span>    myBar <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">XMobar</span>
+<span class="linenr">13: </span>    myTop            <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" -e htop"</span>
+<span class="linenr">14: </span>    myNews           <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" -e newsboat"</span>
+<span class="linenr">15: </span>    myIrc            <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" -e tmux attach"</span>
+<span class="linenr">16: </span>    myDu             <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" -e ncdu ~"</span>
 <span class="linenr">17: </span>
 <span class="linenr">18: </span>    myMenu <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span>
 <span class="linenr">19: </span>    myMenu <span class="org-haskell-operator">=</span> <span class="org-string">"rofi -dmenu -i -p"</span>  <span class="org-comment-delimiter">-- </span><span class="org-comment">For scripts that require user input</span>
@@ -325,7 +325,7 @@ Theme; colors, fonts etc
     myBorderWidth <span class="org-haskell-operator">=</span> 2
 
     <span class="org-comment-delimiter">-- </span><span class="org-comment">Tab colours copied from DistroTube's config (at gitlab/dwt1)</span>
-    myTabActiveColor      <span class="org-haskell-operator">=</span> <span class="org-string">"#46D9FF"</span>
+    myTabActiveColor         <span class="org-haskell-operator">=</span> <span class="org-string">"#46D9FF"</span>
     myTabInactiveColor       <span class="org-haskell-operator">=</span> <span class="org-string">"#313846"</span>
     myTabActiveBorderColor   <span class="org-haskell-operator">=</span> <span class="org-string">"#46D9FF"</span>
     myTabInactiveBorderColor <span class="org-haskell-operator">=</span> <span class="org-string">"#282C34"</span>
@@ -374,7 +374,6 @@ Theme; colors, fonts etc
     myMediumFont <span class="org-haskell-operator">=</span> <span class="org-string">"xft:NotoSansMono Nerd Font:style=Regular:size=32:antialias=true:hinting=true"</span>
     myLargeFont  <span class="org-haskell-operator">=</span> <span class="org-string">"xft:NotoSansMono Nerd Font:style=Bold:size=60:antialias=true:hinting=true"</span>
 
-
 </pre>
 </div>
 
@@ -389,18 +388,20 @@ Search engines, several from <a href="https://hackage.haskell.org/package/xmonad
 <span class="linenr"> 4: </span>    news     <span class="org-haskell-operator">=</span> S.searchEngine <span class="org-string">"news"</span> <span class="org-string">"https://news.google.com/search?q="</span>
 <span class="linenr"> 5: </span>    reddit   <span class="org-haskell-operator">=</span> S.searchEngine <span class="org-string">"reddit"</span> <span class="org-string">"https://www.reddit.com/search/?q="</span>
 <span class="linenr"> 6: </span>    urban    <span class="org-haskell-operator">=</span> S.searchEngine <span class="org-string">"urban"</span> <span class="org-string">"https://www.urbandictionary.com/define.php?term="</span>
-<span class="linenr"> 7: </span>
-<span class="linenr"> 8: </span>    searchList <span class="org-haskell-operator">::</span> [(<span class="org-haskell-type">String</span>, <span class="org-haskell-type">S.SearchEngine</span>)]
-<span class="linenr"> 9: </span>    searchList <span class="org-haskell-operator">=</span> [ (<span class="org-string">"g"</span>, S.google)
-<span class="linenr">10: </span>                 , (<span class="org-string">"h"</span>, S.hoogle)
-<span class="linenr">11: </span>                 , (<span class="org-string">"w"</span>, S.wikipedia)
-<span class="linenr">12: </span>                 , (<span class="org-string">"i"</span>, S.imdb)
-<span class="linenr">13: </span>                 , (<span class="org-string">"a"</span>, archwiki)
-<span class="linenr">14: </span>                 , (<span class="org-string">"n"</span>, news)
-<span class="linenr">15: </span>                 , (<span class="org-string">"r"</span>, reddit)
-<span class="linenr">16: </span>                 , (<span class="org-string">"u"</span>, urban)
-<span class="linenr">17: </span>                 , (<span class="org-string">"c"</span>, S.hackage)
-<span class="linenr">18: </span>                 ]
+<span class="linenr"> 7: </span>    fontawe  <span class="org-haskell-operator">=</span> S.searchEngine <span class="org-string">"font-awesome"</span> <span class="org-string">"https://fontawesome.com/icons?d=gallery&amp;q="</span>
+<span class="linenr"> 8: </span>
+<span class="linenr"> 9: </span>    searchList <span class="org-haskell-operator">::</span> [(<span class="org-haskell-type">String</span>, <span class="org-haskell-type">S.SearchEngine</span>)]
+<span class="linenr">10: </span>    searchList <span class="org-haskell-operator">=</span> [ (<span class="org-string">"a"</span>, archwiki)
+<span class="linenr">11: </span>                 , (<span class="org-string">"c"</span>, S.hackage)
+<span class="linenr">12: </span>                 , (<span class="org-string">"f"</span>, fontawe)
+<span class="linenr">13: </span>                 , (<span class="org-string">"g"</span>, S.google)
+<span class="linenr">14: </span>                 , (<span class="org-string">"h"</span>, S.hoogle)
+<span class="linenr">15: </span>                 , (<span class="org-string">"i"</span>, S.imdb)
+<span class="linenr">16: </span>                 , (<span class="org-string">"n"</span>, news)
+<span class="linenr">17: </span>                 , (<span class="org-string">"r"</span>, reddit)
+<span class="linenr">18: </span>                 , (<span class="org-string">"u"</span>, urban)
+<span class="linenr">19: </span>                 , (<span class="org-string">"w"</span>, S.wikipedia)
+<span class="linenr">20: </span>                 ]
 </pre>
 </div>
 </div>
@@ -422,62 +423,75 @@ Interesting part:
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 11: </span>MyKeys definition</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    <span class="org-haskell-keyword">module</span> <span class="org-haskell-constructor">MyKeys</span>
-<span class="linenr"> 2: </span>    (myKeys,myCheatsheetKey)
-<span class="linenr"> 3: </span>    <span class="org-haskell-keyword">where</span>
+<label class="org-src-name"><span class="listing-number">Listing 11: </span>MyKeys definition</label><pre class="src src-haskell"><span class="linenr"> 1: </span><span class="org-haskell-keyword">module</span> <span class="org-haskell-constructor">MyKeys</span>
+<span class="linenr"> 2: </span>(myKeys,myCheatsheetKey)
+<span class="linenr"> 3: </span><span class="org-haskell-keyword">where</span>
 <span class="linenr"> 4: </span>
-<span class="linenr"> 5: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Data.Char</span> (isSpace, toUpper) <span class="org-comment-delimiter">--</span><span class="org-comment">isSpace?</span>
-<span class="linenr"> 6: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">System.Exit</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">(exitSuccess)</span>
-<span class="linenr"> 7: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad</span>
+<span class="linenr"> 5: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Data.Char</span> (isSpace, toUpper) <span class="org-comment-delimiter">--</span><span class="org-comment">isSpace?</span>
+<span class="linenr"> 6: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">System.Exit</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">(exitSuccess)</span>
+<span class="linenr"> 7: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad</span>
 <span class="linenr"> 8: </span>
-<span class="linenr"> 9: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Hooks.ManageDocks</span>             <span class="org-comment-delimiter">-- </span><span class="org-comment">show/hide xmobar</span>
+<span class="linenr"> 9: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Hooks.ManageDocks</span>             <span class="org-comment-delimiter">-- </span><span class="org-comment">show/hide xmobar</span>
 <span class="linenr">10: </span>
-<span class="linenr">11: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.MultiToggle</span>
-<span class="linenr">12: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.MultiToggle.Instances</span>
-<span class="linenr">13: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.ResizableTile</span>
-<span class="linenr">14: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.StackSet</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">W</span>
-<span class="linenr">15: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.CycleWS</span>
-<span class="linenr">16: </span>
-<span class="linenr">17: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.EZConfig</span>
-<span class="linenr">18: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedActions</span>
-<span id="coderef-showTextM" class="coderef-off"><span class="linenr">19: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.ShowText</span>              <span class="org-comment-delimiter">--</span> (showTextM)</span>
-<span class="linenr">20: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedScratchpad</span>
-<span class="linenr">21: </span>
-<span class="linenr">22: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt</span>
-<span class="linenr">23: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.ConfirmPrompt</span>          <span class="org-comment-delimiter">-- </span><span class="org-comment">don't just hard quit</span>
-<span class="linenr">24: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.FuzzyMatch</span>             <span class="org-comment-delimiter">-- </span><span class="org-comment">(ref:fuzzyM) TODO</span>
-<span class="linenr">25: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.Man</span>
-<span class="linenr">26: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.Actions.Search</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">S</span>
-<span class="linenr">27: </span>
-<span class="linenr">28: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.DynamicProjects</span>       <span class="org-comment-delimiter">-- </span><span class="org-comment">to switch to projects</span>
+<span class="linenr">11: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.MultiToggle</span>
+<span class="linenr">12: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.MultiToggle.Instances</span>
+<span class="linenr">13: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Layout.ResizableTile</span>
+<span class="linenr">14: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.StackSet</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">W</span>
+<span class="linenr">15: </span>
+<span class="linenr">16: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.CycleWS</span>               <span class="org-comment-delimiter">-- </span><span class="org-comment">move around WS</span>
+<span class="linenr">17: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.WorkspaceCompare</span>         <span class="org-comment-delimiter">-- </span><span class="org-comment">custom WS functions filtering NSP</span>
+<span class="linenr">18: </span>
+<span class="linenr">19: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.EZConfig</span>
+<span class="linenr">20: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedActions</span>
+<span id="coderef-showTextM" class="coderef-off"><span class="linenr">21: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.ShowText</span>              <span class="org-comment-delimiter">--</span> (showTextM)</span>
+<span class="linenr">22: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedScratchpad</span>
+<span class="linenr">23: </span>
+<span class="linenr">24: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt</span>
+<span class="linenr">25: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.ConfirmPrompt</span>          <span class="org-comment-delimiter">-- </span><span class="org-comment">don't just hard quit</span>
+<span class="linenr">26: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.FuzzyMatch</span>             <span class="org-comment-delimiter">-- </span><span class="org-comment">(ref:fuzzyM) TODO</span>
+<span class="linenr">27: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Prompt.Man</span>
+<span class="linenr">28: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.Actions.Search</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">S</span>
 <span class="linenr">29: </span>
-<span class="linenr">30: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.SinkAll</span>               <span class="org-comment-delimiter">-- </span><span class="org-comment">make all windows unfloat</span>
+<span class="linenr">30: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.DynamicProjects</span>       <span class="org-comment-delimiter">-- </span><span class="org-comment">to switch to projects</span>
 <span class="linenr">31: </span>
-<span class="linenr">32: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Options</span>                              <span class="org-comment-delimiter">-- </span><span class="org-comment">defaults</span>
-<span class="linenr">33: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">MyScratchpads</span>
-<span class="linenr">34: </span>
+<span class="linenr">32: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Actions.SinkAll</span>               <span class="org-comment-delimiter">-- </span><span class="org-comment">make all windows unfloat</span>
+<span class="linenr">33: </span>
+<span class="linenr">34: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Options</span>                              <span class="org-comment-delimiter">-- </span><span class="org-comment">defaults</span>
+<span class="linenr">35: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">MyScratchpads</span>
+<span class="linenr">36: </span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 12: </span>Help functions</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">Convert multiword strings to arguments (concatenate with delimiters)</span>
-<span class="linenr"> 2: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">This makes sure my shell scripts correctly interpret their arguments</span>
-<span class="linenr"> 3: </span>    args <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> [<span class="org-haskell-type">String</span>] <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">String</span>
-<span class="linenr"> 4: </span>    args command arguments <span class="org-haskell-operator">=</span> command <span class="org-haskell-operator">++</span> <span class="org-string">" "</span> <span class="org-haskell-operator">++</span> unwords (map show arguments)
+<label class="org-src-name"><span class="listing-number">Listing 12: </span>Help functions</label><pre class="src src-haskell"><span class="linenr"> 1: </span><span class="org-comment-delimiter">-- </span><span class="org-comment">Convert multiword strings to arguments (concatenate with delimiters)</span>
+<span class="linenr"> 2: </span><span class="org-comment-delimiter">-- </span><span class="org-comment">This makes sure my shell scripts correctly interpret their arguments</span>
+<span class="linenr"> 3: </span><span class="org-haskell-definition">args</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> [<span class="org-haskell-type">String</span>] <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">String</span>
+<span class="linenr"> 4: </span><span class="org-haskell-definition">args</span> command arguments <span class="org-haskell-operator">=</span> command <span class="org-haskell-operator">++</span> <span class="org-string">" "</span> <span class="org-haskell-operator">++</span> unwords (map show arguments)
 <span class="linenr"> 5: </span>
-<span class="linenr"> 6: </span>    quitXmonad <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
-<span class="linenr"> 7: </span>    quitXmonad <span class="org-haskell-operator">=</span> confirmPrompt hotPromptTheme <span class="org-string">"exit"</span>
-<span class="linenr"> 8: </span>      <span class="org-haskell-operator">$</span> io (exitWith <span class="org-haskell-constructor">ExitSuccess</span>)
+<span class="linenr"> 6: </span><span class="org-haskell-definition">quitXmonad</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
+<span class="linenr"> 7: </span><span class="org-haskell-definition">quitXmonad</span> <span class="org-haskell-operator">=</span> confirmPrompt hotPromptTheme <span class="org-string">"exit"</span>
+<span class="linenr"> 8: </span>  <span class="org-haskell-operator">$</span> io (exitWith <span class="org-haskell-constructor">ExitSuccess</span>)
 <span class="linenr"> 9: </span>
-<span class="linenr">10: </span>    rebuildXmonad <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
-<span class="linenr">11: </span>    rebuildXmonad <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-<span class="linenr">12: </span>      <span class="org-comment-delimiter">-- </span><span class="org-comment">spawn "xmonad --recompile &amp;&amp; xmonad --restart"</span>
-<span class="linenr">13: </span>      spawn myBuildScript
+<span class="linenr">10: </span><span class="org-haskell-definition">rebuildXmonad</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
+<span class="linenr">11: </span><span class="org-haskell-definition">rebuildXmonad</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+<span class="linenr">12: </span>  <span class="org-comment-delimiter">-- </span><span class="org-comment">spawn "xmonad --recompile &amp;&amp; xmonad --restart"</span>
+<span class="linenr">13: </span>  spawn myBuildScript
 <span class="linenr">14: </span>
-<span class="linenr">15: </span>    restartXmonad <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
-<span class="linenr">16: </span>    restartXmonad <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-<span class="linenr">17: </span>      spawn <span class="org-string">"xmonad --restart"</span>
+<span class="linenr">15: </span><span class="org-haskell-definition">restartXmonad</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
+<span class="linenr">16: </span><span class="org-haskell-definition">restartXmonad</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+<span class="linenr">17: </span>  spawn <span class="org-string">"xmonad --restart"</span>
 <span class="linenr">18: </span>
+<span class="linenr">19: </span><span class="org-haskell-definition">nextNonEmptyWS</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
+<span class="linenr">20: </span><span class="org-haskell-definition">nextNonEmptyWS</span> <span class="org-haskell-operator">=</span> findWorkspace getSortByIndexNoSP <span class="org-haskell-constructor">Next</span> <span class="org-haskell-constructor">HiddenNonEmptyWS</span> 1
+<span class="linenr">21: </span>    <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span>t <span class="org-haskell-operator">-&gt;</span> (windows <span class="org-haskell-operator">.</span> W.view <span class="org-haskell-operator">$</span> t)
+<span class="linenr">22: </span><span class="org-haskell-definition">prevNonEmptyWS</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> <span class="org-haskell-constructor">()</span>
+<span class="linenr">23: </span><span class="org-haskell-definition">prevNonEmptyWS</span> <span class="org-haskell-operator">=</span> findWorkspace getSortByIndexNoSP <span class="org-haskell-constructor">Prev</span> <span class="org-haskell-constructor">HiddenNonEmptyWS</span> 1
+<span class="linenr">24: </span>    <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span>t <span class="org-haskell-operator">-&gt;</span> (windows <span class="org-haskell-operator">.</span> W.view <span class="org-haskell-operator">$</span> t)
+<span class="linenr">25: </span><span class="org-haskell-definition">getSortByIndexNoSP</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">X</span> ([<span class="org-haskell-type">WindowSpace</span>] <span class="org-haskell-operator">-&gt;</span> [<span class="org-haskell-type">WindowSpace</span>])
+<span class="linenr">26: </span><span class="org-haskell-definition">getSortByIndexNoSP</span> <span class="org-haskell-operator">=</span>
+<span class="linenr">27: </span>    fmap (<span class="org-haskell-operator">.</span>namedScratchpadFilterOutWorkspace) getSortByIndex
+<span class="linenr">28: </span>
+<span class="linenr">29: </span>
 </pre>
 </div>
 
@@ -496,36 +510,35 @@ Modifiers:
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 13: </span>myKeys configuration</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    myKeys <span class="org-haskell-operator">::</span> <span class="org-haskell-type">XConfig</span> l <span class="org-haskell-operator">-&gt;</span> [((<span class="org-haskell-type">KeyMask</span>, <span class="org-haskell-type">KeySym</span>), <span class="org-haskell-type">NamedAction</span>)]
-<span class="linenr"> 2: </span>    myKeys conf <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">let</span>
+<label class="org-src-name"><span class="listing-number">Listing 13: </span>myKeys configuration</label><pre class="src src-haskell"><span class="linenr"> 1: </span><span class="org-haskell-definition">myKeys</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">XConfig</span> l <span class="org-haskell-operator">-&gt;</span> [((<span class="org-haskell-type">KeyMask</span>, <span class="org-haskell-type">KeySym</span>), <span class="org-haskell-type">NamedAction</span>)]
+<span class="linenr"> 2: </span><span class="org-haskell-definition">myKeys</span> conf <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">let</span>
 <span class="linenr"> 3: </span>
-<span class="linenr"> 4: </span>        subKeys name list <span class="org-haskell-operator">=</span> subtitle name <span class="org-haskell-constructor">:</span> mkNamedKeymap conf list
+<span class="linenr"> 4: </span>    subKeys name list <span class="org-haskell-operator">=</span> subtitle name <span class="org-haskell-constructor">:</span> mkNamedKeymap conf list
 <span class="linenr"> 5: </span>
-<span class="linenr"> 6: </span>        <span class="org-comment-delimiter">-- </span><span class="org-comment">Abbreviations for certain actions</span>
-<span class="linenr"> 7: </span>        menuEditScript         <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"menuEditConfigsS"</span> [myMenu,myEditor]
-<span class="linenr"> 8: </span>        menuEditConfig         <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"menuEditConfigsS"</span> [myMenu,myEditor]
+<span class="linenr"> 6: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">Abbreviations for certain actions</span>
+<span class="linenr"> 7: </span>    menuEditScript         <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"menuEditConfigsS"</span> [myMenu,myEditor]
+<span class="linenr"> 8: </span>    menuEditConfig         <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"menuEditConfigsS"</span> [myMenu,myEditor]
 <span class="linenr"> 9: </span>
-<span class="linenr">10: </span>        viewScreen s          <span class="org-haskell-operator">=</span> screenWorkspace s <span class="org-haskell-operator">&gt;&gt;=</span> flip whenJust (windows <span class="org-haskell-operator">.</span> W.view)
-<span class="linenr">11: </span>        shiftScreen s         <span class="org-haskell-operator">=</span> screenWorkspace s <span class="org-haskell-operator">&gt;&gt;=</span> flip whenJust (windows <span class="org-haskell-operator">.</span> W.shift)
-<span class="linenr">12: </span>        unFloat               <span class="org-haskell-operator">=</span> withFocused <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">.</span> W.sink
+<span class="linenr">10: </span>    viewScreen s          <span class="org-haskell-operator">=</span> screenWorkspace s <span class="org-haskell-operator">&gt;&gt;=</span> flip whenJust (windows <span class="org-haskell-operator">.</span> W.view)
+<span class="linenr">11: </span>    shiftScreen s         <span class="org-haskell-operator">=</span> screenWorkspace s <span class="org-haskell-operator">&gt;&gt;=</span> flip whenJust (windows <span class="org-haskell-operator">.</span> W.shift)
+<span class="linenr">12: </span>    unFloat               <span class="org-haskell-operator">=</span> withFocused <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">.</span> W.sink
 <span class="linenr">13: </span>
-<span class="linenr">14: </span>        volumeAdjust <span class="org-string">"toggle"</span> <span class="org-haskell-operator">=</span> spawn <span class="org-string">"adjustVolumeS toggle"</span>
-<span class="linenr">15: </span>        volumeAdjust value    <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"adjustVolumeS"</span> <span class="org-haskell-operator">$</span> words value
+<span class="linenr">14: </span>    volumeAdjust <span class="org-string">"toggle"</span> <span class="org-haskell-operator">=</span> spawn <span class="org-string">"adjustVolumeS toggle"</span>
+<span class="linenr">15: </span>    volumeAdjust value    <span class="org-haskell-operator">=</span> spawn <span class="org-haskell-operator">$</span> args <span class="org-string">"adjustVolumeS"</span> <span class="org-haskell-operator">$</span> words value
 <span class="linenr">16: </span>
-<span class="linenr">17: </span>        <span class="org-haskell-keyword">in</span>
+<span class="linenr">17: </span>    <span class="org-haskell-keyword">in</span>
 <span class="linenr">18: </span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 14: </span>Core Xmonad bindings</label><pre class="src src-haskell"><span class="linenr">1: </span>        subKeys <span class="org-string">"Core"</span>
-<span class="linenr">2: </span>        [ (<span class="org-string">"M-S-q"</span>                   ,addName <span class="org-string">"Quit XMonad (logout)"</span>   <span class="org-haskell-operator">$</span> quitXmonad)
-<span class="linenr">3: </span>        , (<span class="org-string">"M-q"</span>                     ,addName <span class="org-string">"Recompile &amp; restart"</span>    <span class="org-haskell-operator">$</span> rebuildXmonad)
-<span class="linenr">4: </span>        , (<span class="org-string">"M-M1-q"</span>                  ,addName <span class="org-string">"Restart"</span>                <span class="org-haskell-operator">$</span> restartXmonad)
-<span class="linenr">5: </span>        , (<span class="org-string">"C-&lt;Escape&gt;"</span>              ,addName <span class="org-string">"Application launcher"</span>   <span class="org-haskell-operator">$</span> spawn myAppM)
-<span class="linenr">6: </span>        , (<span class="org-string">"M-S-c"</span>                   ,addName <span class="org-string">"Close window"</span>           <span class="org-haskell-operator">$</span> kill)
-<span class="linenr">7: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr">8: </span>
+<label class="org-src-name"><span class="listing-number">Listing 14: </span>Core Xmonad bindings</label><pre class="src src-haskell"><span class="linenr">1: </span>    subKeys <span class="org-string">"Core"</span>
+<span class="linenr">2: </span>    [ (<span class="org-string">"M-S-q"</span>                   ,addName <span class="org-string">"Quit XMonad (logout)"</span>   <span class="org-haskell-operator">$</span> quitXmonad)
+<span class="linenr">3: </span>    , (<span class="org-string">"M-q"</span>                     ,addName <span class="org-string">"Recompile &amp; restart"</span>    <span class="org-haskell-operator">$</span> rebuildXmonad)
+<span class="linenr">4: </span>    , (<span class="org-string">"M-M1-q"</span>                  ,addName <span class="org-string">"Restart"</span>                <span class="org-haskell-operator">$</span> restartXmonad)
+<span class="linenr">5: </span>    , (<span class="org-string">"C-&lt;Escape&gt;"</span>              ,addName <span class="org-string">"Application launcher"</span>   <span class="org-haskell-operator">$</span> spawn myAppM)
+<span class="linenr">6: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">7: </span>
 </pre>
 </div>
 
@@ -535,33 +548,37 @@ Window manager bindings, for these I use <code>Super</code>:
 
 <ul class="org-ul">
 <li>Screens</li>
-<li>Workspaces (<a href="https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html">XMonad.Actions.CycleWS</a>)</li>
+<li>Workspaces (<a href="https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Actions-CycleWS.html">XMonad.Actions.CycleWS</a> for quickly jumping back and from)</li>
 <li>Layouts</li>
 <li>Windows</li>
 </ul>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 15: </span>Screens and Workspaces</label><pre class="src src-haskell"><span class="linenr"> 1: </span>        subKeys <span class="org-string">"Screens"</span> (
-<span class="linenr"> 2: </span>        [(<span class="org-string">"M-"</span><span class="org-haskell-operator">++</span>key,                  addName (<span class="org-string">"Focus screen "</span><span class="org-haskell-operator">++</span>show sc)   <span class="org-haskell-operator">$</span>     viewScreen sc)
-<span class="linenr"> 3: </span>            <span class="org-haskell-operator">|</span> (key,sc) <span class="org-haskell-operator">&lt;-</span> zip [<span class="org-string">"w"</span>,<span class="org-string">"e"</span>,<span class="org-string">"r"</span>] [0<span class="org-haskell-operator">..</span>]
-<span class="linenr"> 4: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr"> 5: </span>        [(<span class="org-string">"M-S-"</span><span class="org-haskell-operator">++</span>key,                addName (<span class="org-string">"Send to screen "</span><span class="org-haskell-operator">++</span>show sc) <span class="org-haskell-operator">$</span>     shiftScreen sc)
-<span class="linenr"> 6: </span>            <span class="org-haskell-operator">|</span> (key,sc) <span class="org-haskell-operator">&lt;-</span> zip [<span class="org-string">"w"</span>,<span class="org-string">"e"</span>,<span class="org-string">"r"</span>] [0<span class="org-haskell-operator">..</span>]
-<span class="linenr"> 7: </span>        ]) <span class="org-haskell-operator">^++^</span>
+<label class="org-src-name"><span class="listing-number">Listing 15: </span>Screens and Workspaces</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    subKeys <span class="org-string">"Screens"</span> (
+<span class="linenr"> 2: </span>    [(<span class="org-string">"M-"</span><span class="org-haskell-operator">++</span>key,                  addName (<span class="org-string">"Focus screen "</span><span class="org-haskell-operator">++</span>show sc)   <span class="org-haskell-operator">$</span>     viewScreen sc)
+<span class="linenr"> 3: </span>        <span class="org-haskell-operator">|</span> (key,sc) <span class="org-haskell-operator">&lt;-</span> zip [<span class="org-string">"w"</span>,<span class="org-string">"e"</span>,<span class="org-string">"r"</span>] [0<span class="org-haskell-operator">..</span>]
+<span class="linenr"> 4: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr"> 5: </span>    [(<span class="org-string">"M-S-"</span><span class="org-haskell-operator">++</span>key,                addName (<span class="org-string">"Send to screen "</span><span class="org-haskell-operator">++</span>show sc) <span class="org-haskell-operator">$</span>     shiftScreen sc)
+<span class="linenr"> 6: </span>        <span class="org-haskell-operator">|</span> (key,sc) <span class="org-haskell-operator">&lt;-</span> zip [<span class="org-string">"w"</span>,<span class="org-string">"e"</span>,<span class="org-string">"r"</span>] [0<span class="org-haskell-operator">..</span>]
+<span class="linenr"> 7: </span>    ]) <span class="org-haskell-operator">^++^</span>
 <span class="linenr"> 8: </span>
-<span class="linenr"> 9: </span>        subKeys <span class="org-string">"Workspaces"</span> (
-<span class="linenr">10: </span>        <span class="org-comment-delimiter">--</span><span class="org-comment">[ ("M-u",                     addName "View next"              $ )</span>
-<span class="linenr">11: </span>        <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-i,",                    addName "View previous"          $ )</span>
-<span class="linenr">12: </span>        <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-S-u",                   addName "Send to next"           $ )</span>
-<span class="linenr">13: </span>        <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-S-i",                   addName "Send to previous"       $ )</span>
-<span class="linenr">14: </span>        <span class="org-comment-delimiter">--</span><span class="org-comment">] ^++^</span>
-<span class="linenr">15: </span>        [ (<span class="org-string">"M-"</span><span class="org-haskell-operator">++</span>show key,            addName (<span class="org-string">"View workspace "</span><span class="org-haskell-operator">++</span>i)    <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">$</span> W.greedyView i)
-<span class="linenr">16: </span>            <span class="org-haskell-operator">|</span> (key,i) <span class="org-haskell-operator">&lt;-</span> zip [1<span class="org-haskell-operator">..</span>9] (XMonad.workspaces conf)
-<span class="linenr">17: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr">18: </span>        [ (<span class="org-string">"M-S-"</span><span class="org-haskell-operator">++</span>show key,          addName (<span class="org-string">"Send to workspace "</span><span class="org-haskell-operator">++</span>i) <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">$</span> W.shift i)
-<span class="linenr">19: </span>            <span class="org-haskell-operator">|</span> (key,i) <span class="org-haskell-operator">&lt;-</span> zip [1<span class="org-haskell-operator">..</span>9] (XMonad.workspaces conf)
-<span class="linenr">20: </span>        ]) <span class="org-haskell-operator">^++^</span>
-<span class="linenr">21: </span>
+<span class="linenr"> 9: </span>    subKeys <span class="org-string">"Workspaces"</span> (
+<span class="linenr">10: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">[ ("M-u",                     addName "View next"              $ )</span>
+<span class="linenr">11: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-i,",                    addName "View previous"          $ )</span>
+<span class="linenr">12: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-S-u",                   addName "Send to next"           $ )</span>
+<span class="linenr">13: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">, ("M-S-i",                   addName "Send to previous"       $ )</span>
+<span class="linenr">14: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">] ^++^</span>
+<span class="linenr">15: </span>    [ (<span class="org-string">"M-"</span><span class="org-haskell-operator">++</span>show key,            addName (<span class="org-string">"View workspace "</span><span class="org-haskell-operator">++</span>i)    <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">$</span> W.greedyView i)
+<span class="linenr">16: </span>        <span class="org-haskell-operator">|</span> (key,i) <span class="org-haskell-operator">&lt;-</span> zip [1<span class="org-haskell-operator">..</span>9] (XMonad.workspaces conf)
+<span class="linenr">17: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">18: </span>    [ (<span class="org-string">"M-S-"</span><span class="org-haskell-operator">++</span>show key,          addName (<span class="org-string">"Send to workspace "</span><span class="org-haskell-operator">++</span>i) <span class="org-haskell-operator">$</span> windows <span class="org-haskell-operator">$</span> W.shift i)
+<span class="linenr">19: </span>        <span class="org-haskell-operator">|</span> (key,i) <span class="org-haskell-operator">&lt;-</span> zip [1<span class="org-haskell-operator">..</span>9] (XMonad.workspaces conf)
+<span class="linenr">20: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">21: </span>    [ (<span class="org-string">"M3-&lt;Tab&gt;"</span>           , addName <span class="org-string">"Toggle last workspace"</span>       <span class="org-haskell-operator">$</span> toggleWS' [<span class="org-string">"NSP"</span>])
+<span class="linenr">22: </span>    , (<span class="org-string">"M-&lt;Right&gt;"</span>          , addName <span class="org-string">"Next non-empty workspace"</span>    <span class="org-haskell-operator">$</span> nextNonEmptyWS)
+<span class="linenr">23: </span>    , (<span class="org-string">"M-&lt;Left&gt;"</span>           , addName <span class="org-string">"Prev non-empty workspace"</span>    <span class="org-haskell-operator">$</span> prevNonEmptyWS)
+<span class="linenr">24: </span>    ]) <span class="org-haskell-operator">^++^</span>
+<span class="linenr">25: </span>
 </pre>
 </div>
 
@@ -575,7 +592,7 @@ Window manager bindings, for these I use <code>Super</code>:
 <span class="linenr"> 7: </span>        , (<span class="org-string">"M-."</span>                     ,addName <span class="org-string">"Dec master windows"</span>     <span class="org-haskell-operator">$</span> sendMessage <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">IncMasterN</span> (<span class="org-haskell-operator">-</span>1))
 <span class="linenr"> 8: </span>        , (<span class="org-string">"M-&lt;Space&gt;"</span>               ,addName <span class="org-string">"Next layout"</span>            <span class="org-haskell-operator">$</span> sendMessage <span class="org-haskell-constructor">NextLayout</span>)
 <span class="linenr"> 9: </span>        , (<span class="org-string">"M-f"</span>                     ,addName <span class="org-string">"Toggle fullscreen"</span>      <span class="org-haskell-operator">$</span> sendMessage <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">Toggle</span> <span class="org-haskell-constructor">NBFULL</span>)
-<span class="linenr">10: </span>        , (<span class="org-string">"M3-t"</span>                    ,addName <span class="org-string">"Hide Xmobar"</span>            <span class="org-haskell-operator">$</span> sendMessage <span class="org-haskell-constructor">ToggleStruts</span>)
+<span class="linenr">10: </span>        , (<span class="org-string">"M-s"</span>                     ,addName <span class="org-string">"Hide Xmobar"</span>            <span class="org-haskell-operator">$</span> sendMessage <span class="org-haskell-constructor">ToggleStruts</span>)
 <span class="linenr">11: </span>        ] <span class="org-haskell-operator">^++^</span>
 <span class="linenr">12: </span>
 <span class="linenr">13: </span>        subKeys <span class="org-string">"Windows"</span>
@@ -589,16 +606,18 @@ Window manager bindings, for these I use <code>Super</code>:
 <span class="linenr">21: </span>        , (<span class="org-string">"M-&lt;Return&gt;"</span>              ,addName <span class="org-string">"Swap master"</span>            <span class="org-haskell-operator">$</span> windows W.swapMaster)
 <span class="linenr">22: </span>        , (<span class="org-string">"M-t"</span>                     ,addName <span class="org-string">"Unfloat"</span>                <span class="org-haskell-operator">$</span> unFloat)
 <span class="linenr">23: </span>        , (<span class="org-string">"M-S-t"</span>                   ,addName <span class="org-string">"Unfloat All"</span>            <span class="org-haskell-operator">$</span> sinkAll)
-<span class="linenr">24: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr">25: </span>
+<span class="linenr">24: </span>        , (<span class="org-string">"M-S-c"</span>                   ,addName <span class="org-string">"Close window"</span>           <span class="org-haskell-operator">$</span> kill)
+<span class="linenr">25: </span>        , (<span class="org-string">"M-&lt;Backspace&gt;"</span>           ,addName <span class="org-string">"Close window"</span>           <span class="org-haskell-operator">$</span> kill)
+<span class="linenr">26: </span>        ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">27: </span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 17: </span>Projects</label><pre class="src src-haskell" id="org254530f"><span class="linenr">1: </span>        subKeys <span class="org-string">"Projects"</span>
-<span class="linenr">2: </span>        [ (<span class="org-string">"M-w"</span>   , addName <span class="org-string">"switch Project Prompt"</span>   <span class="org-haskell-operator">$</span> switchProjectPrompt warmPromptTheme)
-<span class="linenr">3: </span>        , (<span class="org-string">"M-S-w"</span> , addName <span class="org-string">"shift To Project Prompt"</span> <span class="org-haskell-operator">$</span> shiftToProjectPrompt warmPromptTheme)
-<span class="linenr">4: </span>        ] <span class="org-haskell-operator">^++^</span>
+<label class="org-src-name"><span class="listing-number">Listing 17: </span>Projects</label><pre class="src src-haskell" id="org254530f"><span class="linenr">1: </span>    subKeys <span class="org-string">"Projects"</span>
+<span class="linenr">2: </span>    [ (<span class="org-string">"M-w"</span>   , addName <span class="org-string">"switch Project Prompt"</span>   <span class="org-haskell-operator">$</span> switchProjectPrompt warmPromptTheme)
+<span class="linenr">3: </span>    , (<span class="org-string">"M-S-w"</span> , addName <span class="org-string">"shift To Project Prompt"</span> <span class="org-haskell-operator">$</span> shiftToProjectPrompt warmPromptTheme)
+<span class="linenr">4: </span>    ] <span class="org-haskell-operator">^++^</span>
 <span class="linenr">5: </span>
 </pre>
 </div>
@@ -612,65 +631,68 @@ Note: <code>M-S-&lt;Return&gt;</code> is a fallback, I broke my <i>menu</i> bind
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 18: </span>Applications</label><pre class="src src-haskell"><span class="linenr"> 1: </span>        subKeys <span class="org-string">"Applications"</span>
-<span class="linenr"> 2: </span>        [ (<span class="org-string">"M-S-&lt;Return&gt;"</span>,            addName <span class="org-string">"Terminal emulator"</span>      <span class="org-haskell-operator">$</span> spawn myTerminal)
-<span class="linenr"> 3: </span>        , (<span class="org-string">"M3-&lt;Return&gt;"</span>,             addName <span class="org-string">"Terminal emulator"</span>      <span class="org-haskell-operator">$</span> spawn myTerminal)
-<span class="linenr"> 4: </span>        , (<span class="org-string">"M3-d"</span>,                    addName <span class="org-string">"Start apps (I3 dmenu)"</span>  <span class="org-haskell-operator">$</span> spawn myAppM)
-<span class="linenr"> 5: </span>        , (<span class="org-string">"M3-e"</span>,                    addName <span class="org-string">"Text editor"</span>            <span class="org-haskell-operator">$</span> spawn myEditor)
-<span class="linenr"> 6: </span>        , (<span class="org-string">"M3-w"</span>,                    addName <span class="org-string">"Web browser (minimal)"</span>  <span class="org-haskell-operator">$</span> spawn myBrowser)
-<span class="linenr"> 7: </span>        , (<span class="org-string">"M3-S-w"</span>,                  addName <span class="org-string">"Chromium"</span>               <span class="org-haskell-operator">$</span> spawn <span class="org-string">"chromium"</span>)
-<span class="linenr"> 8: </span>        , (<span class="org-string">"M3-C-w"</span>,                  addName <span class="org-string">"Chromium anonymous"</span>     <span class="org-haskell-operator">$</span> spawn <span class="org-string">"chromium --name=ignognito --incognito"</span>)
-<span class="linenr"> 9: </span>        , (<span class="org-string">"M3-f"</span>,                    addName <span class="org-string">"Terminal file manager"</span>  <span class="org-haskell-operator">$</span> spawn myFileManager)
-<span class="linenr">10: </span>        , (<span class="org-string">"M3-S-f"</span>,                  addName <span class="org-string">"Graphical file manager"</span> <span class="org-haskell-operator">$</span> spawn myGuiFileManager)
-<span class="linenr">11: </span>        , (<span class="org-string">"M3-z"</span>,                    addName <span class="org-string">"Zoom"</span>                   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"zoom"</span>)
-<span class="linenr">12: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr">13: </span>
-<span class="linenr">14: </span>        subKeys <span class="org-string">"My (rofi) Scripts"</span>
-<span class="linenr">15: </span>        [ (<span class="org-string">"M3-p M3-p"</span>,                 addName <span class="org-string">"Edit scripts"</span>        <span class="org-haskell-operator">$</span> menuEditScript)
-<span class="linenr">16: </span>        , (<span class="org-string">"M3-p M3-e"</span>,                 addName <span class="org-string">"Edit configs"</span>        <span class="org-haskell-operator">$</span> menuEditConfig)
-<span class="linenr">17: </span>        ] <span class="org-haskell-operator">^++^</span>
+<label class="org-src-name"><span class="listing-number">Listing 18: </span>Applications</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    subKeys <span class="org-string">"Applications"</span>
+<span class="linenr"> 2: </span>    [ (<span class="org-string">"M-S-&lt;Return&gt;"</span>            ,addName <span class="org-string">"Terminal emulator"</span>      <span class="org-haskell-operator">$</span> spawn myTerminal)
+<span class="linenr"> 3: </span>    , (<span class="org-string">"M3-&lt;Return&gt;"</span>             ,addName <span class="org-string">"Terminal emulator"</span>      <span class="org-haskell-operator">$</span> spawn myTerminal)
+<span class="linenr"> 4: </span>    , (<span class="org-string">"M3-d"</span>                    ,addName <span class="org-string">"Start apps (I3 dmenu)"</span>  <span class="org-haskell-operator">$</span> spawn myAppM)
+<span class="linenr"> 5: </span>    , (<span class="org-string">"M3-e"</span>                    ,addName <span class="org-string">"Text editor"</span>            <span class="org-haskell-operator">$</span> spawn myEditor)
+<span class="linenr"> 6: </span>    , (<span class="org-string">"M3-f"</span>                    ,addName <span class="org-string">"Terminal file manager"</span>  <span class="org-haskell-operator">$</span> spawn myFileManager)
+<span class="linenr"> 7: </span>    , (<span class="org-string">"M3-h"</span>                    ,addName <span class="org-string">"Htop"</span>                   <span class="org-haskell-operator">$</span> spawn myTop)
+<span class="linenr"> 8: </span>    , (<span class="org-string">"M3-i"</span>                    ,addName <span class="org-string">"Weechat"</span>                <span class="org-haskell-operator">$</span> spawn myIrc)
+<span class="linenr"> 9: </span>    , (<span class="org-string">"M3-n"</span>                    ,addName <span class="org-string">"Newsboat"</span>               <span class="org-haskell-operator">$</span> spawn myNews)
+<span class="linenr">10: </span>    , (<span class="org-string">"M3-S-f"</span>                  ,addName <span class="org-string">"Graphical file manager"</span> <span class="org-haskell-operator">$</span> spawn myGuiFileManager)
+<span class="linenr">11: </span>    , (<span class="org-string">"M3-w"</span>                    ,addName <span class="org-string">"Web browser (minimal)"</span>  <span class="org-haskell-operator">$</span> spawn myBrowser)
+<span class="linenr">12: </span>    , (<span class="org-string">"M3-S-w"</span>                  ,addName <span class="org-string">"Chromium"</span>               <span class="org-haskell-operator">$</span> spawn <span class="org-string">"chromium"</span>)
+<span class="linenr">13: </span>    , (<span class="org-string">"M3-C-w"</span>                  ,addName <span class="org-string">"Chromium anonymous"</span>     <span class="org-haskell-operator">$</span> spawn <span class="org-string">"chromium --name=ignognito --incognito"</span>)
+<span class="linenr">14: </span>    , (<span class="org-string">"M3-z"</span>                    ,addName <span class="org-string">"Zoom"</span>                   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"zoom"</span>)
+<span class="linenr">15: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">16: </span>
+<span class="linenr">17: </span>    subKeys <span class="org-string">"My (rofi) Scripts"</span>
+<span class="linenr">18: </span>    [ (<span class="org-string">"M3-p M3-p"</span>,                 addName <span class="org-string">"Edit scripts"</span>        <span class="org-haskell-operator">$</span> menuEditScript)
+<span class="linenr">19: </span>    , (<span class="org-string">"M3-p M3-e"</span>,                 addName <span class="org-string">"Edit configs"</span>        <span class="org-haskell-operator">$</span> menuEditConfig)
+<span class="linenr">20: </span>    ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">21: </span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 19: </span>Multimedia Keys</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    subKeys <span class="org-string">"Multimedia Keys"</span>
+<span class="linenr"> 2: </span>    [ (<span class="org-string">"&lt;XF86AudioMute&gt;"</span>         ,addName <span class="org-string">"Toggle mute"</span>           <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"togmute"</span>)
+<span class="linenr"> 3: </span>    , (<span class="org-string">"M3-&lt;Space&gt;"</span>              ,addName <span class="org-string">"Toggle mute"</span>           <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"togmute"</span>)
+<span class="linenr"> 4: </span>    , (<span class="org-string">"&lt;XF86AudioLowerVolume&gt;"</span>  ,addName <span class="org-string">"Decrease volume"</span>       <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"down"</span>)
+<span class="linenr"> 5: </span>    , (<span class="org-string">"&lt;XF86AudioRaiseVolume&gt;"</span>  ,addName <span class="org-string">"Increase volume"</span>       <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"up"</span>)
+<span class="linenr"> 6: </span>    , (<span class="org-string">"&lt;XF86MonBrightnessDown&gt;"</span> ,addName <span class="org-string">"Decrease brightness"</span>   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"backlightS -dec 10"</span>)
+<span class="linenr"> 7: </span>    , (<span class="org-string">"&lt;XF86MonBrightnessUp&gt;"</span>   ,addName <span class="org-string">"Increase brightness"</span>   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"backlightS -inc 10"</span>)
+<span class="linenr"> 8: </span>    , (<span class="org-string">"&lt;XF86TouchpadToggle&gt;"</span>    ,addName <span class="org-string">"Toggle Touchpad"</span>       <span class="org-haskell-operator">$</span> spawn <span class="org-string">"toggleTouchpadS"</span>)
+<span class="linenr"> 9: </span>    , (<span class="org-string">"&lt;Print&gt;"</span>                 ,addName <span class="org-string">"Take screenshot"</span>       <span class="org-haskell-operator">$</span> spawn (myPrintScreen <span class="org-haskell-operator">++</span> <span class="org-string">" -n"</span>))
+<span class="linenr">10: </span>    , (<span class="org-string">"S-&lt;Print&gt;"</span>               ,addName <span class="org-string">"Take screenshot menu"</span>  <span class="org-haskell-operator">$</span> spawn myPrintScreen)
+<span class="linenr">11: </span>    , (<span class="org-string">"M-u p"</span>                   ,addName <span class="org-string">"Play music"</span>            <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc play"</span>)
+<span class="linenr">12: </span>    , (<span class="org-string">"M-u ,"</span>                   ,addName <span class="org-string">"Play next"</span>             <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc next"</span>)
+<span class="linenr">13: </span>    , (<span class="org-string">"M-u ."</span>                   ,addName <span class="org-string">"Play previous"</span>         <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc prev"</span>)
+<span class="linenr">14: </span>    , (<span class="org-string">"M-u &lt;Space&gt;"</span>             ,addName <span class="org-string">"Toggle play"</span>           <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc toggle"</span>)
+<span class="linenr">15: </span>    , (<span class="org-string">"M-u n"</span>                   ,addName <span class="org-string">"Fetch TV url"</span>          <span class="org-haskell-operator">$</span> spawn <span class="org-string">"newseries -p"</span>)
+<span class="linenr">16: </span>    , (<span class="org-string">"M-u /"</span>                   ,addName <span class="org-string">"Music player"</span>          <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
+<span class="linenr">17: </span>    ] <span class="org-haskell-operator">^++^</span>
 <span class="linenr">18: </span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 19: </span>Multimedia Keys</label><pre class="src src-haskell"><span class="linenr"> 1: </span>        subKeys <span class="org-string">"Multimedia Keys"</span>
-<span class="linenr"> 2: </span>        [ (<span class="org-string">"&lt;XF86AudioMute&gt;"</span>         ,addName <span class="org-string">"Toggle mute"</span>           <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"togmute"</span>)
-<span class="linenr"> 3: </span>        , (<span class="org-string">"M3-&lt;Space&gt;"</span>              ,addName <span class="org-string">"Toggle mute"</span>           <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"togmute"</span>)
-<span class="linenr"> 4: </span>        , (<span class="org-string">"&lt;XF86AudioLowerVolume&gt;"</span>  ,addName <span class="org-string">"Decrease volume"</span>       <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"down"</span>)
-<span class="linenr"> 5: </span>        , (<span class="org-string">"&lt;XF86AudioRaiseVolume&gt;"</span>  ,addName <span class="org-string">"Increase volume"</span>       <span class="org-haskell-operator">$</span> volumeAdjust <span class="org-string">"up"</span>)
-<span class="linenr"> 6: </span>        , (<span class="org-string">"&lt;XF86MonBrightnessDown&gt;"</span> ,addName <span class="org-string">"Decrease brightness"</span>   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"backlightS -dec 10"</span>)
-<span class="linenr"> 7: </span>        , (<span class="org-string">"&lt;XF86MonBrightnessUp&gt;"</span>   ,addName <span class="org-string">"Increase brightness"</span>   <span class="org-haskell-operator">$</span> spawn <span class="org-string">"backlightS -inc 10"</span>)
-<span class="linenr"> 8: </span>        , (<span class="org-string">"&lt;XF86TouchpadToggle&gt;"</span>    ,addName <span class="org-string">"Toggle Touchpad"</span>       <span class="org-haskell-operator">$</span> spawn <span class="org-string">"toggleTouchpadS"</span>)
-<span class="linenr"> 9: </span>        , (<span class="org-string">"&lt;Print&gt;"</span>                 ,addName <span class="org-string">"Take screenshot"</span>       <span class="org-haskell-operator">$</span> spawn (myPrintScreen <span class="org-haskell-operator">++</span> <span class="org-string">" -n"</span>))
-<span class="linenr">10: </span>        , (<span class="org-string">"S-&lt;Print&gt;"</span>               ,addName <span class="org-string">"Take screenshot menu"</span>  <span class="org-haskell-operator">$</span> spawn myPrintScreen)
-<span class="linenr">11: </span>        , (<span class="org-string">"M-u p"</span>                   ,addName <span class="org-string">"Play music"</span>            <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc play"</span>)
-<span class="linenr">12: </span>        , (<span class="org-string">"M-u ,"</span>                   ,addName <span class="org-string">"Play next"</span>             <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc next"</span>)
-<span class="linenr">13: </span>        , (<span class="org-string">"M-u ."</span>                   ,addName <span class="org-string">"Play previous"</span>         <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc prev"</span>)
-<span class="linenr">14: </span>        , (<span class="org-string">"M-u &lt;Space&gt;"</span>             ,addName <span class="org-string">"Toggle play"</span>           <span class="org-haskell-operator">$</span> spawn <span class="org-string">"mpc toggle"</span>)
-<span class="linenr">15: </span>        , (<span class="org-string">"M-u n"</span>                   ,addName <span class="org-string">"Fetch TV url"</span>          <span class="org-haskell-operator">$</span> spawn <span class="org-string">"newseries -p"</span>)
-<span class="linenr">16: </span>        , (<span class="org-string">"M-u /"</span>                   ,addName <span class="org-string">"Music player"</span>          <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
-<span class="linenr">17: </span>        ] <span class="org-haskell-operator">^++^</span>
-<span class="linenr">18: </span>
-</pre>
-</div>
-
-<div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 20: </span>Scratchpads</label><pre class="src src-haskell"><span class="linenr"> 1: </span>        subKeys <span class="org-string">"Scratchpads"</span>
-<span class="linenr"> 2: </span>        [ (<span class="org-string">"M-C-&lt;Return&gt;"</span> ,addName <span class="org-string">"Scratchpads"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
-<span class="linenr"> 3: </span>        , (<span class="org-string">"M-`"</span>          ,addName <span class="org-string">"Scratchpad"</span>     <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
-<span class="linenr"> 4: </span>        , (<span class="org-string">"M-z a"</span>        ,addName <span class="org-string">"Volume control"</span> <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myPavu"</span>)
-<span class="linenr"> 5: </span>        , (<span class="org-string">"M-z m"</span>        ,addName <span class="org-string">"Music player"</span>   <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
-<span class="linenr"> 6: </span>        , (<span class="org-string">"M-z w"</span>        ,addName <span class="org-string">"Whatsapp"</span>       <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myWhatsApp"</span>)
-<span class="linenr"> 7: </span>        , (<span class="org-string">"M-z p"</span>        ,addName <span class="org-string">"Proton mail"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myProtonmail"</span>)
+<label class="org-src-name"><span class="listing-number">Listing 20: </span>Scratchpads</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    subKeys <span class="org-string">"Scratchpads"</span>
+<span class="linenr"> 2: </span>    [ (<span class="org-string">"M-C-&lt;Return&gt;"</span> ,addName <span class="org-string">"Scratchpads"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
+<span class="linenr"> 3: </span>    , (<span class="org-string">"M-`"</span>          ,addName <span class="org-string">"Scratchpad"</span>     <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
+<span class="linenr"> 4: </span>    , (<span class="org-string">"M-z a"</span>        ,addName <span class="org-string">"Volume control"</span> <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myPavu"</span>)
+<span class="linenr"> 5: </span>    , (<span class="org-string">"M-z m"</span>        ,addName <span class="org-string">"Music player"</span>   <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
+<span class="linenr"> 6: </span>    , (<span class="org-string">"M-z w"</span>        ,addName <span class="org-string">"Whatsapp"</span>       <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myWhatsApp"</span>)
+<span class="linenr"> 7: </span>    , (<span class="org-string">"M-z p"</span>        ,addName <span class="org-string">"Proton mail"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myProtonmail"</span>)
 <span class="linenr"> 8: </span>
-<span class="linenr"> 9: </span>        , (<span class="org-string">"M3-&lt;F1&gt;"</span>      ,addName <span class="org-string">"Scratchpads"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
-<span class="linenr">10: </span>        , (<span class="org-string">"M3-&lt;F2&gt;"</span>      ,addName <span class="org-string">"Whatsapp"</span>       <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myWhatsApp"</span>)
-<span class="linenr">11: </span>        , (<span class="org-string">"M3-&lt;F3&gt;"</span>      ,addName <span class="org-string">"Proton mail"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myProtonmail"</span>)
-<span class="linenr">12: </span>        , (<span class="org-string">"M3-&lt;F4&gt;"</span>      ,addName <span class="org-string">"Volume control"</span> <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myPavu"</span>)
-<span class="linenr">13: </span>        , (<span class="org-string">"M3-&lt;F5&gt;"</span>      ,addName <span class="org-string">"Music player"</span>   <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
+<span class="linenr"> 9: </span>    , (<span class="org-string">"M3-&lt;F1&gt;"</span>      ,addName <span class="org-string">"Scratchpads"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"scratchpad"</span>)
+<span class="linenr">10: </span>    , (<span class="org-string">"M3-&lt;F2&gt;"</span>      ,addName <span class="org-string">"Whatsapp"</span>       <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myWhatsApp"</span>)
+<span class="linenr">11: </span>    , (<span class="org-string">"M3-&lt;F3&gt;"</span>      ,addName <span class="org-string">"Proton mail"</span>    <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myProtonmail"</span>)
+<span class="linenr">12: </span>    , (<span class="org-string">"M3-&lt;F4&gt;"</span>      ,addName <span class="org-string">"Volume control"</span> <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myPavu"</span>)
+<span class="linenr">13: </span>    , (<span class="org-string">"M3-&lt;F5&gt;"</span>      ,addName <span class="org-string">"Music player"</span>   <span class="org-haskell-operator">$</span> namedScratchpadAction myScratchPads <span class="org-string">"myMusic"</span>)
 <span class="linenr">14: </span>
-<span class="linenr">15: </span>        ] <span class="org-haskell-operator">^++^</span>
+<span class="linenr">15: </span>    ] <span class="org-haskell-operator">^++^</span>
 <span class="linenr">16: </span>
 </pre>
 </div>
@@ -694,11 +716,11 @@ Prompts (<code>H-m</code>, man-page) and Search-engines(<code>H-s</code> +):
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 21: </span>Prompts</label><pre class="src src-haskell"><span class="linenr">1: </span>        subKeys <span class="org-string">"Prompts"</span>
-<span class="linenr">2: </span>        [ (<span class="org-string">"M3-m"</span> ,addName <span class="org-string">"Man-page Prompt"</span> <span class="org-haskell-operator">$</span> manPrompt myPromptTheme)] <span class="org-haskell-operator">^++^</span>
+<label class="org-src-name"><span class="listing-number">Listing 21: </span>Prompts</label><pre class="src src-haskell"><span class="linenr">1: </span>    subKeys <span class="org-string">"Prompts"</span>
+<span class="linenr">2: </span>    [ (<span class="org-string">"M3-m"</span> ,addName <span class="org-string">"Man-page Prompt"</span> <span class="org-haskell-operator">$</span> manPrompt myPromptTheme)] <span class="org-haskell-operator">^++^</span>
 <span class="linenr">3: </span>
-<span class="linenr">4: </span>        subKeys <span class="org-string">"Searchengines"</span>
-<span class="linenr">5: </span>        [ (<span class="org-string">"M3-s "</span> <span class="org-haskell-operator">++</span> k ,addName <span class="org-string">"Search Engines"</span>  <span class="org-haskell-operator">$</span> S.promptSearch myPromptTheme f) <span class="org-haskell-operator">|</span> (k,f) <span class="org-haskell-operator">&lt;-</span> searchList]
+<span class="linenr">4: </span>    subKeys <span class="org-string">"Searchengines"</span>
+<span class="linenr">5: </span>    [ (<span class="org-string">"M3-s "</span> <span class="org-haskell-operator">++</span> k ,addName <span class="org-string">"Search Engines"</span>  <span class="org-haskell-operator">$</span> S.promptSearch myPromptTheme f) <span class="org-haskell-operator">|</span> (k,f) <span class="org-haskell-operator">&lt;-</span> searchList]
 <span class="linenr">6: </span>
 </pre>
 </div>
@@ -708,8 +730,8 @@ Keybinding to display the keybinding cheatsheet
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 22: </span>Cheatsheet</label><pre class="src src-haskell"><span class="linenr">1: </span>    myCheatsheetKey <span class="org-haskell-operator">::</span> (<span class="org-haskell-type">KeyMask</span>, <span class="org-haskell-type">KeySym</span>)
-<span class="linenr">2: </span>    myCheatsheetKey <span class="org-haskell-operator">=</span> (myModMask <span class="org-haskell-operator">.|.</span> shiftMask, xK_slash)
+<label class="org-src-name"><span class="listing-number">Listing 22: </span>Cheatsheet</label><pre class="src src-haskell"><span class="linenr">1: </span><span class="org-haskell-definition">myCheatsheetKey</span> <span class="org-haskell-operator">::</span> (<span class="org-haskell-type">KeyMask</span>, <span class="org-haskell-type">KeySym</span>)
+<span class="linenr">2: </span><span class="org-haskell-definition">myCheatsheetKey</span> <span class="org-haskell-operator">=</span> (myModMask <span class="org-haskell-operator">.|.</span> shiftMask, xK_slash)
 <span class="linenr">3: </span>
 </pre>
 </div>
@@ -725,43 +747,43 @@ Theme prompts:
 </ul>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 23: </span>Prompt theme</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    myPromptTheme <span class="org-haskell-operator">::</span> <span class="org-haskell-type">XPConfig</span>
-<span class="linenr"> 2: </span>    myPromptTheme <span class="org-haskell-operator">=</span> def
-<span class="linenr"> 3: </span>        { font                  <span class="org-haskell-operator">=</span> myFont
-<span class="linenr"> 4: </span>        , bgColor               <span class="org-haskell-operator">=</span> base03
-<span class="linenr"> 5: </span>        , fgColor               <span class="org-haskell-operator">=</span> active
-<span class="linenr"> 6: </span>        , fgHLight              <span class="org-haskell-operator">=</span> base03
-<span class="linenr"> 7: </span>        , bgHLight              <span class="org-haskell-operator">=</span> active
-<span class="linenr"> 8: </span>        , borderColor           <span class="org-haskell-operator">=</span> base03
-<span class="linenr"> 9: </span>        , promptBorderWidth     <span class="org-haskell-operator">=</span> 0
-<span class="linenr">10: </span>        , height                <span class="org-haskell-operator">=</span> prompt
-<span class="linenr">11: </span>        , promptKeymap          <span class="org-haskell-operator">=</span> emacsLikeXPKeymap
-<span class="linenr">12: </span>        , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
-<span class="linenr">13: </span>        <span class="org-comment-delimiter">-- </span><span class="org-comment">, position            = CenteredAt { xpCenterY = 0.3, xpWidth = 0.3 }</span>
-<span class="linenr">14: </span>        , historySize           <span class="org-haskell-operator">=</span> 256
-<span class="linenr">15: </span>        , historyFilter         <span class="org-haskell-operator">=</span> id
-<span class="linenr">16: </span>        , defaultText           <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">[]</span>
-<span class="linenr">17: </span>        <span class="org-comment-delimiter">-- </span><span class="org-comment">, autoComplete        = Just 100000  -- set Just 100000 for .1 sec</span>
-<span class="linenr">18: </span>        , showCompletionOnTab   <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
-<span class="linenr">19: </span>        <span class="org-comment-delimiter">-- </span><span class="org-comment">, complCaseSensitivity  = ComplCaseSensitive False -- newer version :-(!</span>
-<span class="linenr">20: </span>        , searchPredicate       <span class="org-haskell-operator">=</span> fuzzyMatch   <span class="org-comment-delimiter">--</span>
-<span class="linenr">21: </span>        , sorter                <span class="org-haskell-operator">=</span> fuzzySort
-<span class="linenr">22: </span>        , defaultPrompter       <span class="org-haskell-operator">=</span> id <span class="org-haskell-operator">$</span> map toUpper  <span class="org-comment-delimiter">-- </span><span class="org-comment">change prompt to UPPER</span>
-<span class="linenr">23: </span>        , alwaysHighlight       <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
-<span class="linenr">24: </span>        , maxComplRows          <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Just</span> 15 <span class="org-comment-delimiter">-- </span><span class="org-comment">Nothing -- Nothing is unlimited</span>
-<span class="linenr">25: </span>        }
+<label class="org-src-name"><span class="listing-number">Listing 23: </span>Prompt theme</label><pre class="src src-haskell"><span class="linenr"> 1: </span><span class="org-haskell-definition">myPromptTheme</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">XPConfig</span>
+<span class="linenr"> 2: </span><span class="org-haskell-definition">myPromptTheme</span> <span class="org-haskell-operator">=</span> def
+<span class="linenr"> 3: </span>    { font                  <span class="org-haskell-operator">=</span> myFont
+<span class="linenr"> 4: </span>    , bgColor               <span class="org-haskell-operator">=</span> base03
+<span class="linenr"> 5: </span>    , fgColor               <span class="org-haskell-operator">=</span> active
+<span class="linenr"> 6: </span>    , fgHLight              <span class="org-haskell-operator">=</span> base03
+<span class="linenr"> 7: </span>    , bgHLight              <span class="org-haskell-operator">=</span> active
+<span class="linenr"> 8: </span>    , borderColor           <span class="org-haskell-operator">=</span> base03
+<span class="linenr"> 9: </span>    , promptBorderWidth     <span class="org-haskell-operator">=</span> 0
+<span class="linenr">10: </span>    , height                <span class="org-haskell-operator">=</span> prompt
+<span class="linenr">11: </span>    , promptKeymap          <span class="org-haskell-operator">=</span> emacsLikeXPKeymap
+<span class="linenr">12: </span>    , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
+<span class="linenr">13: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">, position            = CenteredAt { xpCenterY = 0.3, xpWidth = 0.3 }</span>
+<span class="linenr">14: </span>    , historySize           <span class="org-haskell-operator">=</span> 256
+<span class="linenr">15: </span>    , historyFilter         <span class="org-haskell-operator">=</span> id
+<span class="linenr">16: </span>    , defaultText           <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">[]</span>
+<span class="linenr">17: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">, autoComplete        = Just 100000  -- set Just 100000 for .1 sec</span>
+<span class="linenr">18: </span>    , showCompletionOnTab   <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+<span class="linenr">19: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">, complCaseSensitivity  = ComplCaseSensitive False -- newer version :-(!</span>
+<span class="linenr">20: </span>    , searchPredicate       <span class="org-haskell-operator">=</span> fuzzyMatch   <span class="org-comment-delimiter">--</span>
+<span class="linenr">21: </span>    , sorter                <span class="org-haskell-operator">=</span> fuzzySort
+<span class="linenr">22: </span>    , defaultPrompter       <span class="org-haskell-operator">=</span> id <span class="org-haskell-operator">$</span> map toUpper  <span class="org-comment-delimiter">-- </span><span class="org-comment">change prompt to UPPER</span>
+<span class="linenr">23: </span>    , alwaysHighlight       <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
+<span class="linenr">24: </span>    , maxComplRows          <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Just</span> 15 <span class="org-comment-delimiter">-- </span><span class="org-comment">Nothing -- Nothing is unlimited</span>
+<span class="linenr">25: </span>    }
 <span class="linenr">26: </span>
-<span class="linenr">27: </span>    warmPromptTheme <span class="org-haskell-operator">=</span> myPromptTheme
-<span class="linenr">28: </span>        { bgColor               <span class="org-haskell-operator">=</span> yellow
-<span class="linenr">29: </span>        , fgColor               <span class="org-haskell-operator">=</span> base03
-<span class="linenr">30: </span>        , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
-<span class="linenr">31: </span>        }
+<span class="linenr">27: </span><span class="org-haskell-definition">warmPromptTheme</span> <span class="org-haskell-operator">=</span> myPromptTheme
+<span class="linenr">28: </span>    { bgColor               <span class="org-haskell-operator">=</span> yellow
+<span class="linenr">29: </span>    , fgColor               <span class="org-haskell-operator">=</span> base03
+<span class="linenr">30: </span>    , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
+<span class="linenr">31: </span>    }
 <span class="linenr">32: </span>
-<span class="linenr">33: </span>    hotPromptTheme <span class="org-haskell-operator">=</span> myPromptTheme
-<span class="linenr">34: </span>        { bgColor               <span class="org-haskell-operator">=</span> red
-<span class="linenr">35: </span>        , fgColor               <span class="org-haskell-operator">=</span> base3
-<span class="linenr">36: </span>        , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
-<span class="linenr">37: </span>        }
+<span class="linenr">33: </span><span class="org-haskell-definition">hotPromptTheme</span> <span class="org-haskell-operator">=</span> myPromptTheme
+<span class="linenr">34: </span>    { bgColor               <span class="org-haskell-operator">=</span> red
+<span class="linenr">35: </span>    , fgColor               <span class="org-haskell-operator">=</span> base3
+<span class="linenr">36: </span>    , position              <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Top</span>
+<span class="linenr">37: </span>    }
 <span class="linenr">38: </span>
 </pre>
 </div>
@@ -856,18 +878,22 @@ Code is partly based on snippets from <a href="https://hackage.haskell.org/packa
 <span class="linenr">33: </span><span class="org-comment-delimiter">-- </span><span class="org-comment">Use shorter indicators for the layout</span>
 <span class="linenr">34: </span><span class="org-haskell-definition">xmobarLay</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">String</span>
 <span class="linenr">35: </span><span class="org-haskell-definition">xmobarLay</span> x <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> x <span class="org-haskell-keyword">of</span>
-<span class="linenr">36: </span>               <span class="org-comment-delimiter">--</span><span class="org-comment">"Tall"  -&gt; "&lt;fn=0&gt;T&lt;/fn&gt;"</span>
-<span class="linenr">37: </span>               <span class="org-string">"Tall"</span>    <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf00b&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">th-list</span>
-<span class="linenr">38: </span>               <span class="org-string">"Three"</span>   <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=0&gt;3&lt;/fn&gt;"</span>
-<span class="linenr">39: </span>               <span class="org-string">"Full"</span>    <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0c8&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">square "&lt;fn=0&gt;F&lt;/fn&gt;"</span>
-<span class="linenr">40: </span>               <span class="org-string">"magnify"</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf00e&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">search-plus</span>
-<span class="linenr">41: </span>               <span class="org-string">"monocle"</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf06e&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">eye</span>
-<span class="linenr">42: </span>               <span class="org-string">"Tabs"</span>    <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0db&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">columns</span>
-<span class="linenr">43: </span>               <span class="org-comment-delimiter">--</span><span class="org-comment">"Tabs"  -&gt; "&lt;fn=1&gt;\xf03b&lt;/fn&gt;"</span>
-<span class="linenr">44: </span>               <span class="org-string">"grid"</span>    <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf009&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">th-grid</span>
-<span class="linenr">45: </span>               <span class="org-string">"floats"</span>  <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0c2&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">cloud</span>
-<span class="linenr">46: </span>               <span class="org-haskell-keyword">_</span>       <span class="org-haskell-operator">-&gt;</span> x
-<span class="linenr">47: </span>
+<span class="linenr">36: </span>               <span class="org-string">"Tall"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf00b&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">th-list</span>
+<span class="linenr">37: </span>               <span class="org-string">"Three"</span>                     <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=0&gt;3&lt;/fn&gt;"</span>
+<span class="linenr">38: </span>               <span class="org-string">"Full"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0c8&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">square "&lt;fn=0&gt;F&lt;/fn&gt;"</span>
+<span class="linenr">39: </span>               <span class="org-string">"full"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0c8&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">square "&lt;fn=0&gt;F&lt;/fn&gt;"</span>
+<span class="linenr">40: </span>               <span class="org-string">"magnify"</span>                   <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf00e&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">search-plus</span>
+<span class="linenr">41: </span>               <span class="org-string">"monocle"</span>                   <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf06e&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">eye</span>
+<span class="linenr">42: </span>               <span class="org-string">"Tabs"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0db&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">columns</span>
+<span class="linenr">43: </span>               <span class="org-string">"tabs"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf03b&lt;/fn&gt;"</span>
+<span class="linenr">44: </span>               <span class="org-string">"grid"</span>                      <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf009&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">th-grid</span>
+<span class="linenr">45: </span>               <span class="org-string">"floats"</span>                    <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf0c2&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">cloud</span>
+<span class="linenr">46: </span>               <span class="org-string">"Tabbed Simplest"</span>           <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=1&gt;\xf03c&lt;/fn&gt;"</span> <span class="org-comment-delimiter">-- </span><span class="org-comment">indent</span>
+<span class="linenr">47: </span>               <span class="org-string">"readLayout"</span>                <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=0&gt;read&lt;/fn&gt;"</span>   <span class="org-comment-delimiter">--</span>
+<span class="linenr">48: </span>               <span class="org-string">"vimLayout"</span>                 <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=0&gt;vim&lt;/fn&gt;"</span>    <span class="org-comment-delimiter">--</span>
+<span class="linenr">49: </span>               <span class="org-string">"Mirror Mastered Accordion"</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-string">"&lt;fn=0&gt;acc&lt;/fn&gt;"</span> <span class="org-comment-delimiter">--</span>
+<span class="linenr">50: </span>               <span class="org-haskell-keyword">_</span>       <span class="org-haskell-operator">-&gt;</span> x
+<span class="linenr">51: </span>
 </pre>
 </div>
 </div>
@@ -1152,7 +1178,7 @@ workspace.
 To find the property name associated with a program, use
 </p>
 
-<pre class="example" id="orgfdc879f">
+<pre class="example" id="orgd7ae093">
    xprop | grep WM_CLASS
 </pre>
 
@@ -1407,69 +1433,69 @@ Script: <code>dzen2-display-cheatsheetS</code>
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 39: </span>Scratchpads definition</label><pre class="src src-haskell"><span class="linenr">1: </span>    <span class="org-haskell-keyword">module</span> <span class="org-haskell-constructor">MyScratchpads</span>
-<span class="linenr">2: </span>    (myScratchPads)
-<span class="linenr">3: </span>    <span class="org-haskell-keyword">where</span>
+<label class="org-src-name"><span class="listing-number">Listing 39: </span>Scratchpads definition</label><pre class="src src-haskell"><span class="linenr">1: </span><span class="org-haskell-keyword">module</span> <span class="org-haskell-constructor">MyScratchpads</span>
+<span class="linenr">2: </span>(myScratchPads)
+<span class="linenr">3: </span><span class="org-haskell-keyword">where</span>
 <span class="linenr">4: </span>
-<span class="linenr">5: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad</span>
-<span class="linenr">6: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Options</span>
-<span class="linenr">7: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedScratchpad</span>
-<span class="linenr">8: </span>    <span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.StackSet</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">W</span>
+<span class="linenr">5: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad</span>
+<span class="linenr">6: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Options</span>
+<span class="linenr">7: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">XMonad.Util.NamedScratchpad</span>
+<span class="linenr">8: </span><span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">XMonad.StackSet</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">W</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 40: </span>Scratchpads listing</label><pre class="src src-haskell"><span class="linenr"> 1: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">-------------------------------------------------------------------------</span>
-<span class="linenr"> 2: </span>    <span class="org-comment-delimiter">-- </span><span class="org-comment">SCRATCHPADS                                                           --</span>
-<span class="linenr"> 3: </span>    <span class="org-comment-delimiter">--</span><span class="org-comment">-------------------------------------------------------------------------</span>
-<span class="linenr"> 4: </span>    myScratchPads <span class="org-haskell-operator">::</span> [<span class="org-haskell-type">NamedScratchpad</span>]
-<span class="linenr"> 5: </span>    myScratchPads <span class="org-haskell-operator">=</span> [ <span class="org-haskell-constructor">NS</span> <span class="org-string">"scratchpad"</span> spawnTerm findTerm manageTerm
-<span class="linenr"> 6: </span>                    , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myPavu"</span> spawnPavu findPavu managePavu
-<span class="linenr"> 7: </span>                    , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myMusic"</span> spawnMocp findMocp manageMocp
-<span class="linenr"> 8: </span>                    , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myWhatsApp"</span> spawnWhatsApp findWhatsApp manageWhatsApp
-<span class="linenr"> 9: </span>                    , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myProtonmail"</span> spawnProtonmail findProtonmail manageProtonmail
-<span class="linenr">10: </span>                    ]
-<span class="linenr">11: </span>      <span class="org-haskell-keyword">where</span>
-<span class="linenr">12: </span>        spawnTerm  <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" --class scratchPad"</span>
-<span class="linenr">13: </span>        findTerm   <span class="org-haskell-operator">=</span> resource <span class="org-haskell-operator">=?</span> <span class="org-string">"scratchPad"</span>
-<span class="linenr">14: </span>        manageTerm <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
-<span class="linenr">15: </span>                   <span class="org-haskell-keyword">where</span>
-<span class="linenr">16: </span>                     h <span class="org-haskell-operator">=</span> 0.6
-<span class="linenr">17: </span>                     w <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">18: </span>                     t <span class="org-haskell-operator">=</span> 1 <span class="org-haskell-operator">-</span> h     <span class="org-comment-delimiter">-- </span><span class="org-comment">bottom edge</span>
-<span class="linenr">19: </span>                     l <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> w)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered left/right</span>
-<span class="linenr">20: </span>        spawnPavu  <span class="org-haskell-operator">=</span> myAudiocontrol <span class="org-haskell-operator">++</span> <span class="org-string">" --class myPavu"</span>
-<span class="linenr">21: </span>        findPavu   <span class="org-haskell-operator">=</span> resource <span class="org-haskell-operator">=?</span> <span class="org-string">"pavucontrol"</span> <span class="org-comment-delimiter">--</span><span class="org-comment">TODO how to catch second field?</span>
-<span class="linenr">22: </span>        managePavu <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
-<span class="linenr">23: </span>                   <span class="org-haskell-keyword">where</span>
-<span class="linenr">24: </span>                     h <span class="org-haskell-operator">=</span> 0.7
-<span class="linenr">25: </span>                     w <span class="org-haskell-operator">=</span> 0.7
-<span class="linenr">26: </span>                     t <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> h)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered top/bottom</span>
-<span class="linenr">27: </span>                     l <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> w)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered left/right</span>
-<span class="linenr">28: </span>        spawnMocp  <span class="org-haskell-operator">=</span> <span class="org-string">"alacritty --class myMusic -e ncmpcpp"</span>
-<span class="linenr">29: </span>        findMocp   <span class="org-haskell-operator">=</span> resource <span class="org-haskell-operator">=?</span> <span class="org-string">"myMusic"</span>
-<span class="linenr">30: </span>        manageMocp <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
-<span class="linenr">31: </span>                   <span class="org-haskell-keyword">where</span>
-<span class="linenr">32: </span>                     h <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">33: </span>                     w <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">34: </span>                     t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
-<span class="linenr">35: </span>                     l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
-<span class="linenr">36: </span>        spawnWhatsApp  <span class="org-haskell-operator">=</span> <span class="org-string">"chromium --app=https://web.whatsapp.com/"</span>
-<span class="linenr">37: </span>        findWhatsApp   <span class="org-haskell-operator">=</span> appName <span class="org-haskell-operator">=?</span> <span class="org-string">"web.whatsapp.com"</span>
-<span class="linenr">38: </span>        manageWhatsApp <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
-<span class="linenr">39: </span>                   <span class="org-haskell-keyword">where</span>
-<span class="linenr">40: </span>                     h <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">41: </span>                     w <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">42: </span>                     t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
-<span class="linenr">43: </span>                     l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
-<span class="linenr">44: </span>        spawnProtonmail  <span class="org-haskell-operator">=</span> <span class="org-string">"chromium --app=https://mail.protonmail.com/"</span>
-<span class="linenr">45: </span>        findProtonmail   <span class="org-haskell-operator">=</span> appName <span class="org-haskell-operator">=?</span> <span class="org-string">"mail.protonmail.com"</span>
-<span class="linenr">46: </span>        manageProtonmail <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
-<span class="linenr">47: </span>                   <span class="org-haskell-keyword">where</span>
-<span class="linenr">48: </span>                     h <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">49: </span>                     w <span class="org-haskell-operator">=</span> 0.9
-<span class="linenr">50: </span>                     t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
-<span class="linenr">51: </span>                     l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
+<label class="org-src-name"><span class="listing-number">Listing 40: </span>Scratchpads listing</label><pre class="src src-haskell"><span class="linenr"> 1: </span><span class="org-comment-delimiter">--</span><span class="org-comment">-------------------------------------------------------------------------</span>
+<span class="linenr"> 2: </span><span class="org-comment-delimiter">-- </span><span class="org-comment">SCRATCHPADS                                                           --</span>
+<span class="linenr"> 3: </span><span class="org-comment-delimiter">--</span><span class="org-comment">-------------------------------------------------------------------------</span>
+<span class="linenr"> 4: </span><span class="org-haskell-definition">myScratchPads</span> <span class="org-haskell-operator">::</span> [<span class="org-haskell-type">NamedScratchpad</span>]
+<span class="linenr"> 5: </span><span class="org-haskell-definition">myScratchPads</span> <span class="org-haskell-operator">=</span> [ <span class="org-haskell-constructor">NS</span> <span class="org-string">"scratchpad"</span> spawnTerm findTerm manageTerm
+<span class="linenr"> 6: </span>                , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myPavu"</span> spawnPavu findPavu managePavu
+<span class="linenr"> 7: </span>                , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myMusic"</span> spawnMocp findMocp manageMocp
+<span class="linenr"> 8: </span>                , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myWhatsApp"</span> spawnWhatsApp findWhatsApp manageWhatsApp
+<span class="linenr"> 9: </span>                , <span class="org-haskell-constructor">NS</span> <span class="org-string">"myProtonmail"</span> spawnProtonmail findProtonmail manageProtonmail
+<span class="linenr">10: </span>                ]
+<span class="linenr">11: </span>  <span class="org-haskell-keyword">where</span>
+<span class="linenr">12: </span>    spawnTerm  <span class="org-haskell-operator">=</span> myTerminal <span class="org-haskell-operator">++</span> <span class="org-string">" --class scratchPad"</span>
+<span class="linenr">13: </span>    findTerm   <span class="org-haskell-operator">=</span> resource <span class="org-haskell-operator">=?</span> <span class="org-string">"scratchPad"</span>
+<span class="linenr">14: </span>    manageTerm <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
+<span class="linenr">15: </span>               <span class="org-haskell-keyword">where</span>
+<span class="linenr">16: </span>                 h <span class="org-haskell-operator">=</span> 0.6
+<span class="linenr">17: </span>                 w <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">18: </span>                 t <span class="org-haskell-operator">=</span> 1 <span class="org-haskell-operator">-</span> h     <span class="org-comment-delimiter">-- </span><span class="org-comment">bottom edge</span>
+<span class="linenr">19: </span>                 l <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> w)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered left/right</span>
+<span class="linenr">20: </span>    spawnPavu  <span class="org-haskell-operator">=</span> myAudiocontrol <span class="org-haskell-operator">++</span> <span class="org-string">" --class myPavu"</span>
+<span class="linenr">21: </span>    findPavu   <span class="org-haskell-operator">=</span> resource <span class="org-haskell-operator">=?</span> <span class="org-string">"pavucontrol"</span> <span class="org-comment-delimiter">--</span><span class="org-comment">TODO how to catch second field?</span>
+<span class="linenr">22: </span>    managePavu <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
+<span class="linenr">23: </span>               <span class="org-haskell-keyword">where</span>
+<span class="linenr">24: </span>                 h <span class="org-haskell-operator">=</span> 0.7
+<span class="linenr">25: </span>                 w <span class="org-haskell-operator">=</span> 0.7
+<span class="linenr">26: </span>                 t <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> h)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered top/bottom</span>
+<span class="linenr">27: </span>                 l <span class="org-haskell-operator">=</span> (1 <span class="org-haskell-operator">-</span> w)<span class="org-haskell-operator">/</span>2 <span class="org-comment-delimiter">-- </span><span class="org-comment">centered left/right</span>
+<span class="linenr">28: </span>    spawnMocp  <span class="org-haskell-operator">=</span> <span class="org-string">"xterm -class myMusic -fa 'Source Code Pro' -fs 10 -e ncmpcpp"</span>
+<span class="linenr">29: </span>    findMocp   <span class="org-haskell-operator">=</span> className <span class="org-haskell-operator">=?</span> <span class="org-string">"myMusic"</span>
+<span class="linenr">30: </span>    manageMocp <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
+<span class="linenr">31: </span>               <span class="org-haskell-keyword">where</span>
+<span class="linenr">32: </span>                 h <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">33: </span>                 w <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">34: </span>                 t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
+<span class="linenr">35: </span>                 l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
+<span class="linenr">36: </span>    spawnWhatsApp  <span class="org-haskell-operator">=</span> <span class="org-string">"chromium --app=https://web.whatsapp.com/"</span>
+<span class="linenr">37: </span>    findWhatsApp   <span class="org-haskell-operator">=</span> appName <span class="org-haskell-operator">=?</span> <span class="org-string">"web.whatsapp.com"</span>
+<span class="linenr">38: </span>    manageWhatsApp <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
+<span class="linenr">39: </span>               <span class="org-haskell-keyword">where</span>
+<span class="linenr">40: </span>                 h <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">41: </span>                 w <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">42: </span>                 t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
+<span class="linenr">43: </span>                 l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
+<span class="linenr">44: </span>    spawnProtonmail  <span class="org-haskell-operator">=</span> <span class="org-string">"chromium --app=https://mail.protonmail.com/"</span>
+<span class="linenr">45: </span>    findProtonmail   <span class="org-haskell-operator">=</span> appName <span class="org-haskell-operator">=?</span> <span class="org-string">"mail.protonmail.com"</span>
+<span class="linenr">46: </span>    manageProtonmail <span class="org-haskell-operator">=</span> customFloating <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">W.RationalRect</span> l t w h
+<span class="linenr">47: </span>               <span class="org-haskell-keyword">where</span>
+<span class="linenr">48: </span>                 h <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">49: </span>                 w <span class="org-haskell-operator">=</span> 0.9
+<span class="linenr">50: </span>                 t <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>h
+<span class="linenr">51: </span>                 l <span class="org-haskell-operator">=</span> 0.95 <span class="org-haskell-operator">-</span>w
 </pre>
 </div>
 </div>
@@ -1520,7 +1546,7 @@ When using the switchProjectPrompt function, workspaces are created as needed. T
 To set up a new <code>project</code>, use the following template:
 </p>
 
-<pre class="example" id="orgb66756e">
+<pre class="example" id="org9a7f352">
       { projectName = "browsers",              (1)
         projectDirectory = "~/Downloads",      (2)
         projectStartHook = Just $ do
@@ -1736,7 +1762,7 @@ Source: <a href="https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_ne
 For example, pointing it at Emacs gives:
 </p>
 
-<pre class="example" id="org9bda928">
+<pre class="example" id="orgb03e340">
 WM_NAME:
   title =? "ws.org - GNU Emacs at green"
 WM_CLASS:
@@ -2447,6 +2473,7 @@ Small script that uses <code>rofi</code> to show my default config files.
 <span class="org-string">zshenv</span>
 <span class="org-string">zprofile</span>
 <span class="org-string">aliases</span>
+<span class="org-string">mpv</span>
 <span class="org-string">picom</span>
 <span class="org-string">qutebrowser</span>
 <span class="org-string">xmonad.hs</span>
@@ -2459,7 +2486,7 @@ Small script that uses <code>rofi</code> to show my default config files.
 <span class="org-comment-delimiter"># </span><span class="org-comment">Find the path to the chosen file</span>
 <span class="org-keyword">case</span> <span class="org-string">"$choice"</span><span class="org-keyword"> in</span>
     alacritty)
-        <span class="org-variable-name">file</span>=<span class="org-string">"$HOME/.config/alacritty/base.yml"</span>
+        <span class="org-variable-name">file</span>=<span class="org-string">"$HOME/.config/alacritty/alacritty.yml"</span>
     ;;
     zshrc)
         <span class="org-variable-name">file</span>=<span class="org-string">"$ZDOTDIR/.zshrc"</span>
@@ -2472,6 +2499,9 @@ Small script that uses <code>rofi</code> to show my default config files.
     ;;
     picom)
         <span class="org-variable-name">file</span>=<span class="org-string">"$HOME/.config/picom/picom.conf"</span>
+    ;;
+    mpv)
+        <span class="org-variable-name">file</span>=<span class="org-string">"$HOME/.config/mpv/mpv.conf"</span>
     ;;
     zprofile)
         <span class="org-variable-name">file</span>=<span class="org-string">"$ZDOTDIR/.zprofile"</span>
@@ -2660,7 +2690,7 @@ Colors the same as in <code>xmonad.hs</code>.
 It is safer to use the unicode, then the glyph:
 </p>
 
-<pre class="example" id="orgb3cb046">
+<pre class="example" id="org66743ad">
      clock:        \xf017 - 
      calendar-alt: \xf073 - 
      microchip:    \xf2db - 
@@ -2705,7 +2735,7 @@ Monkey see, monkey do:
 <div id="postamble" class="status">
 <p class="date">Date: 2020-12-24 Thu 00:00</p>
 <p class="author">Author: Alex Qwxlea</p>
-<p class="date">Created: 2020-12-26 Sat 19:17</p>
+<p class="date">Created: 2020-12-27 Sun 14:56</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
