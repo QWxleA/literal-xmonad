@@ -5,7 +5,7 @@
 #+OPTIONS: html-style:nil :html-head-include-scripts nil
 #+title: Literal XMonad
 #+date: <2020-12-24 Thu>
-#+PROPERTY: header-args  :mkdirp yes
+#+PROPERTY: header-args   :mkdirp yes
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="res/org.css"/>
 #+EXPORT_FILE_NAME: index.html
 
@@ -84,7 +84,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
 * app/Main.hs
   :PROPERTIES:
-  :header-args:  :tangle "~/.config/xmonad/app/Main.hs"
+  :header-args:  :tangle "~/.config/xmonad/app/Main.hs"  :mkdirp yes
   :END:
 
 ** Header
@@ -158,14 +158,14 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
                , layoutHook         = myLayoutHook
                , logHook            = myLogHook xmproc
                , workspaces         = WS.names
-               , startupHook        = spawnOnce myAutostart
+               , startupHook        = spawn myAutostart
                }
 
    #+end_src
 
 * src/Options.hs
   :PROPERTIES:
-  :header-args: :tangle "~/.config/xmonad/src/Options.hs"
+  :header-args: :tangle "~/.config/xmonad/src/Options.hs"  :mkdirp yes
   :END:
 
   The idea is to set up all the defaults here, instead all over the place. So far my success has been limited.
@@ -195,8 +195,8 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
     myTerminal       = "alacritty"
     myEditor         = "emacsclient -c"
-    myBrowser        = "qutebrowser"
-    myFileManager    = myTerminal ++ " -e ranger "
+    myBrowser        = "browserS -w" -- 'smart' browserscript
+    myFileManager    = myTerminal ++ " -e lf "
     myGuiFileManager = "pcmanfm"
     myPdfReader      = "zathura"
     myPrintScreen    = "screenshotS"
@@ -491,6 +491,7 @@ myKeys conf = let
         , ("M-,"                     ,addName "Inc master windows"     $ sendMessage $ IncMasterN 1)
         , ("M-."                     ,addName "Dec master windows"     $ sendMessage $ IncMasterN (-1))
         , ("M-<Space>"               ,addName "Next layout"            $ sendMessage NextLayout)
+        , ("M-S-<Space>"             ,addName "First layout"        $ sendMessage FirstLayout)
         , ("M-f"                     ,addName "Toggle fullscreen"      $ sendMessage $ Toggle NBFULL)
         , ("M-s"                     ,addName "Hide Xmobar"            $ sendMessage ToggleStruts)
         ] ^++^
@@ -540,7 +541,6 @@ myKeys conf = let
     , ("M3-S-f"                  ,addName "Graphical file manager" $ spawn myGuiFileManager)
     , ("M3-w"                    ,addName "Web browser (minimal)"  $ spawn myBrowser)
     , ("M3-S-w"                  ,addName "Chromium"               $ spawn "chromium")
-    , ("M3-C-w"                  ,addName "Chromium anonymous"     $ spawn "chromium --name=ignognito --incognito")
     , ("M3-z"                    ,addName "Zoom"                   $ spawn "zoom")
     ] ^++^
 
@@ -565,7 +565,9 @@ myKeys conf = let
     , ("S-<Print>"               ,addName "Take screenshot menu"  $ spawn myPrintScreen)
     , ("M-u p"                   ,addName "Play music"            $ spawn "mpc play")
     , ("M-u ,"                   ,addName "Play next"             $ spawn "mpc next")
+    , ("M3-<Left>"               ,addName "Play next"             $ spawn "mpc next")
     , ("M-u ."                   ,addName "Play previous"         $ spawn "mpc prev")
+    , ("M3-<Right>"              ,addName "Play previous"         $ spawn "mpc prev")
     , ("M-u <Space>"             ,addName "Toggle play"           $ spawn "mpc toggle")
     , ("M-u n"                   ,addName "Fetch TV url"          $ spawn "newseries -p")
     , ("M-u /"                   ,addName "Music player"          $ namedScratchpadAction myScratchPads "myMusic")
@@ -582,12 +584,14 @@ myKeys conf = let
     , ("M-z m"        ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
     , ("M-z w"        ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
     , ("M-z p"        ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
+    , ("M-z b"        ,addName "Bitwarden"      $ namedScratchpadAction myScratchPads "myBitwarden")
 
     , ("M3-<F1>"      ,addName "Scratchpads"    $ namedScratchpadAction myScratchPads "scratchpad")
     , ("M3-<F2>"      ,addName "Whatsapp"       $ namedScratchpadAction myScratchPads "myWhatsApp")
     , ("M3-<F3>"      ,addName "Proton mail"    $ namedScratchpadAction myScratchPads "myProtonmail")
     , ("M3-<F4>"      ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
     , ("M3-<F5>"      ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
+    , ("M3-<F6>"      ,addName "Bitwarden"      $ namedScratchpadAction myScratchPads "myBitwarden")
 
     ] ^++^
 
@@ -699,7 +703,7 @@ import Options
 myLogHook :: Handle -> X ()
 myLogHook h = dynamicLogWithPP $ xmobarPP
                   { ppOutput          = hPutStrLn h
-                  , ppTitle           = xmobarColor active "" . shorten 30
+                  , ppTitle           = xmobarColor active "" . shorten 35
                   , ppVisible         = xmobarColor base0  "" . wrap "(" ")" . xmobarIcon
                   , ppUrgent          = xmobarColor red    "" . wrap " " " "
                   , ppSep             = xmobarColor red myNormalBorderColor " . "
@@ -724,9 +728,13 @@ Code is partly based on snippets from [[https://hackage.haskell.org/package/xmon
 #+begin_src haskell -n
 -- Symbols for displaying workspaces in xmobar
 -- Must be functions, as it expects a different symbol for each
-myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
-myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
-myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
+myCurrentWsSymbol workspaceName = "[X]" -- The workspace currently active
+myHiddenWsSymbol  workspaceName =  "X"  -- Workspaces with open windows
+myEmptyWsSymbol   workspaceName =  "_"  -- Workspaces with no windows
+
+-- myCurrentWsSymbol workspaceName = "[●]" -- The workspace currently active
+-- myHiddenWsSymbol  workspaceName =  "●"  -- Workspaces with open windows
+-- myEmptyWsSymbol   workspaceName =  "○"  -- Workspaces with no windows
 
 -- Show scratchpads, just with another color
 xmobarColor' :: String  -- ^ foreground color: a color name, or #rrggbb format
@@ -742,7 +750,8 @@ xmobarColor' fg bg x = xmobarColor fg2 bg $ xmobarIcon x
 -- Use shorter indicators for the workspaces
 xmobarIcon :: String -> String
 xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
-               "browsers" -> "<fn=1>\xf0ac</fn>"
+               "browsers" -> "<fn=2>\xe643</fn>"
+-- "<fn=1>\xe743</fn>" -- "<fn=1>\xf0ac</fn>" -- "<fn=0>W</fn>"
                "emacs"    -> "<fn=1>\xf044</fn>"
                "xmonad"   -> "<fn=0>xm</fn>"
                "term"     -> "<fn=1>\xf044</fn>"
@@ -753,6 +762,8 @@ xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
                "tv"       -> "<fn=1>\xf008</fn>"
                "NSP"      -> "<fn=1>\xf249</fn>"
                _          -> x
+
+--2: e669 tor | e6a3 code | f68c terminal
 
 -- Use shorter indicators for the layout
 xmobarLay :: String -> String
@@ -917,8 +928,10 @@ myLayoutHook = avoidStruts
              $ mkToggle (single MIRROR)
              $ onWorkspace "browsers"   webLayouts
              $ onWorkspace "zoom"       zoomLayouts
+             $ onWorkspace "wine"       full
              $ onWorkspaces maxProj     maxLayouts
              $ onWorkspaces termProj    termLayouts
+             $ onWorkspaces studyProj   studyLayouts
              $ defaultLayouts
              where
                maxProj      = ["chat","emacs","tv"]
@@ -1063,12 +1076,13 @@ manageSpecific = composeAll . concat $
 
     , [ className  =? "Chromium" <&&> role =? "GtkFileChooserDialog" --> largeFloat]
     , [ (title     =? "emacs-capture" )     --> smallFloat ]
+    , [ (title     =? "emacs-popup" )     -->  doRectFloat (W.RationalRect 0.1 0.3 0.7 0.7) ]
 
     , [ (className =? "obs" <&&> title =? "Scripts" ) --> largeFloat ]
     , [ (className =? "obs" <&&> isDialog ) --> largeFloat ]
     ]
     where
-        floatApps  = ["pavucontrol", "myMusic", "xmessage", "myFloat"]
+        floatApps  = ["pavucontrol", "myMusic", "xmessage", "myFloat", "steam_proton"]
         obsFloats  = [ "Scripts"]
         myZoomFloats   = ["Chat", "Participants", "Rooms"] -- Currently untested for breakout rooms
         role = stringProperty "WM_WINDOW_ROLE"
@@ -1174,7 +1188,7 @@ zoomFloat = doFloatDep move
   Script: =dzen2-display-cheatsheetS=
 
   #+CAPTION: dzen2-display-cheatsheetS
-  #+begin_src shell :tangle-mode (identity #o555) :tangle "~/.local/bin/dzen2-display-cheatsheetS"
+  #+begin_src shell :tangle-mode (identity #o555) :tangle "~/.local/bin/dzen2-display-cheatsheetS"  :mkdirp yes
     #!/usr/bin/sh
 
     font="Mono-10"
@@ -1287,6 +1301,7 @@ myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
                 , NS "myMusic" spawnMocp findMocp manageMocp
                 , NS "myWhatsApp" spawnWhatsApp findWhatsApp manageWhatsApp
                 , NS "myProtonmail" spawnProtonmail findProtonmail manageProtonmail
+                , NS "myBitwarden" spawnBitwarden findBitwarden manageBitwarden
                 ]
   where
     spawnTerm  = myTerminal ++ " --class scratchPad"
@@ -1324,6 +1339,14 @@ myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
     spawnProtonmail  = "chromium --app=https://mail.protonmail.com/"
     findProtonmail   = appName =? "mail.protonmail.com"
     manageProtonmail = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.9
+                 w = 0.9
+                 t = 0.95 -h
+                 l = 0.95 -w
+    spawnBitwarden  = "bitwarden"
+    findBitwarden   = appName =? "bitwarden"
+    manageBitwarden = customFloating $ W.RationalRect l t w h
                where
                  h = 0.9
                  w = 0.9
@@ -1444,8 +1467,8 @@ projects =
       projectDirectory = "~/Video",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "Tabbed")
-        -- spawn "alaritty -e ranger"
-        spawn (myTerminal ++ " -e ranger")
+        -- spawn "alaritty -e lf"
+        spawn (myTerminal ++ " -e lf")
     },
     Project
     { projectName = "haskell",
@@ -1462,15 +1485,37 @@ projects =
         spawn myTerminal
     },
     Project
+    { projectName = "wine",
+      projectDirectory = "~",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "full")
+        spawn myTerminal
+    },
+    Project
     { projectName = "zoom",
       projectDirectory = "~/Downloads",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "2/3")
         spawn "zoom"
         spawn (myTerminal ++ " --class zoom")
+    },
+    Project
+    { projectName = "office",
+      projectDirectory = "~/Documents",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "full")
+        spawn "libreoffice --writer"
+    },
+    Project
+    { projectName = "nech",
+      projectDirectory = "~/Projects/nechepurenko",
+      projectStartHook = Just $ do
+        sendMessage (JumpToLayout "2/3")
+        spawn "emacsclient -c ~/Projects/nechepurenko"
+        spawn (myTerminal ++ " --class nech")
     }
-  ]
 
+  ]
   #+end_src
 
   =projRunInTerm= (partly) taken from [[https://hackage.haskell.org/package/xmonad-contrib-0.16/docs/XMonad-Util-Run.html#v:runInTerm][XMonad.Util.Run]]. Does not yet work...
@@ -1486,14 +1531,478 @@ names = map projectName projects
 -- projRunInTerm options command = asks (terminal . config) >>= \t -> unsafeSpawn $ t ++ " " ++ " --class " ++ projectName  ++ options ++ " -e " ++ command
   #+end_src
 
-* External scripts
+* External scripts & configs
+** Compositor - picom
+
+   #+begin_src conf :tangle ~/.config/picom/picom.conf  :mkdirp yes
+#################################
+#             Shadows           #
+#################################
+
+
+# Enabled client-side shadows on windows. Note desktop windows
+# (windows with '_NET_WM_WINDOW_TYPE_DESKTOP') never get shadow,
+# unless explicitly requested using the wintypes option.
+#
+# shadow = false
+shadow = true;
+
+# The blur radius for shadows, in pixels. (defaults to 12)
+# shadow-radius = 12
+shadow-radius = 7;
+
+# The opacity of shadows. (0.0 - 1.0, defaults to 0.75)
+# shadow-opacity = .75
+
+# The left offset for shadows, in pixels. (defaults to -15)
+# shadow-offset-x = -15
+shadow-offset-x = -7;
+
+# The top offset for shadows, in pixels. (defaults to -15)
+# shadow-offset-y = -15
+shadow-offset-y = -7;
+
+# Avoid drawing shadows on dock/panel windows. This option is deprecated,
+# you should use the *wintypes* option in your config file instead.
+#
+# no-dock-shadow = false
+
+# Don't draw shadows on drag-and-drop windows. This option is deprecated,
+# you should use the *wintypes* option in your config file instead.
+#
+# no-dnd-shadow = false
+
+# Red color value of shadow (0.0 - 1.0, defaults to 0).
+# shadow-red = 0
+
+# Green color value of shadow (0.0 - 1.0, defaults to 0).
+# shadow-green = 0
+
+# Blue color value of shadow (0.0 - 1.0, defaults to 0).
+# shadow-blue = 0
+
+# Do not paint shadows on shaped windows. Note shaped windows
+# here means windows setting its shape through X Shape extension.
+# Those using ARGB background is beyond our control.
+# Deprecated, use
+#   shadow-exclude = 'bounding_shaped'
+# or
+#   shadow-exclude = 'bounding_shaped && !rounded_corners'
+# instead.
+#
+# shadow-ignore-shaped = ''
+
+# Specify a list of conditions of windows that should have no shadow.
+#
+# examples:
+#   shadow-exclude = "n:e:Notification";
+#
+# shadow-exclude = []
+shadow-exclude = [
+  "name = 'Notification'",
+  "class_g = 'Conky'",
+  "class_g ?= 'Notify-osd'",
+  "class_g = 'Cairo-clock'",
+  "_GTK_FRAME_EXTENTS@:c"
+];
+
+# Specify a X geometry that describes the region in which shadow should not
+# be painted in, such as a dock window region. Use
+#    shadow-exclude-reg = "x10+0+0"
+# for example, if the 10 pixels on the bottom of the screen should not have shadows painted on.
+#
+# shadow-exclude-reg = ""
+
+# Crop shadow of a window fully on a particular Xinerama screen to the screen.
+# xinerama-shadow-crop = false
+
+
+#################################
+#           Fading              #
+#################################
+
+
+# Fade windows in/out when opening/closing and when opacity changes,
+#  unless no-fading-openclose is used.
+# fading = false
+fading = true
+
+# Opacity change between steps while fading in. (0.01 - 1.0, defaults to 0.028)
+# fade-in-step = 0.028
+fade-in-step = 0.03;
+
+# Opacity change between steps while fading out. (0.01 - 1.0, defaults to 0.03)
+# fade-out-step = 0.03
+fade-out-step = 0.03;
+
+# The time between steps in fade step, in milliseconds. (> 0, defaults to 10)
+# fade-delta = 10
+
+# Specify a list of conditions of windows that should not be faded.
+# fade-exclude = []
+
+# Do not fade on window open/close.
+# no-fading-openclose = false
+
+# Do not fade destroyed ARGB windows with WM frame. Workaround of bugs in Openbox, Fluxbox, etc.
+# no-fading-destroyed-argb = false
+
+
+#################################
+#   Transparency / Opacity      #
+#################################
+
+
+# Opacity of inactive windows. (0.1 - 1.0, defaults to 1.0)
+# inactive-opacity = 1
+inactive-opacity = 0.8;
+
+# Opacity of window titlebars and borders. (0.1 - 1.0, disabled by default)
+# frame-opacity = 1.0
+frame-opacity = 0.7;
+
+# Default opacity for dropdown menus and popup menus. (0.0 - 1.0, defaults to 1.0)
+# menu-opacity = 1.0
+
+# Let inactive opacity set by -i override the '_NET_WM_OPACITY' values of windows.
+# inactive-opacity-override = true
+inactive-opacity-override = false;
+
+# Default opacity for active windows. (0.0 - 1.0, defaults to 1.0)
+# active-opacity = 1.0
+
+# Dim inactive windows. (0.0 - 1.0, defaults to 0.0)
+# inactive-dim = 0.0
+
+# Specify a list of conditions of windows that should always be considered focused.
+# focus-exclude = []
+focus-exclude = [ "class_g = 'Cairo-clock'" ];
+
+# Use fixed inactive dim value, instead of adjusting according to window opacity.
+# inactive-dim-fixed = 1.0
+
+# Specify a list of opacity rules, in the format `PERCENT:PATTERN`,
+# like `50:name *= "Firefox"`. picom-trans is recommended over this.
+# Note we don't make any guarantee about possible conflicts with other
+# programs that set '_NET_WM_WINDOW_OPACITY' on frame or client windows.
+# example:
+#    opacity-rule = [ "80:class_g = 'URxvt'" ];
+#
+# opacity-rule = []
+#opacity-rule = [ "100name *=" ];
+opacity-rule = [
+  "100:class_g *= 'mpv'"
+];
+
+#################################
+#     Background-Blurring       #
+#################################
+
+
+# Parameters for background blurring, see the *BLUR* section for more information.
+# blur-method =
+# blur-size = 12
+#
+# blur-deviation = false
+
+# Blur background of semi-transparent / ARGB windows.
+# Bad in performance, with driver-dependent behavior.
+# The name of the switch may change without prior notifications.
+#
+# blur-background = false
+
+# Blur background of windows when the window frame is not opaque.
+# Implies:
+#    blur-background
+# Bad in performance, with driver-dependent behavior. The name may change.
+#
+# blur-background-frame = false
+
+
+# Use fixed blur strength rather than adjusting according to window opacity.
+# blur-background-fixed = false
+
+
+# Specify the blur convolution kernel, with the following format:
+# example:
+#   blur-kern = "5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";
+#
+# blur-kern = ''
+blur-kern = "3x3box";
+
+
+# Exclude conditions for background blur.
+# blur-background-exclude = []
+blur-background-exclude = [
+  "window_type = 'dock'",
+  "window_type = 'desktop'",
+  "_GTK_FRAME_EXTENTS@:c"
+];
+
+#################################
+#       General Settings        #
+#################################
+
+# Daemonize process. Fork to background after initialization. Causes issues with certain (badly-written) drivers.
+# daemon = false
+
+# Specify the backend to use: `xrender`, `glx`, or `xr_glx_hybrid`.
+# `xrender` is the default one.
+#
+# backend = 'glx'
+backend = "glx";
+
+# Enable/disable VSync.
+# vsync = false
+vsync = true
+
+# Enable remote control via D-Bus. See the *D-BUS API* section below for more details.
+# dbus = false
+
+# Try to detect WM windows (a non-override-redirect window with no
+# child that has 'WM_STATE') and mark them as active.
+#
+# mark-wmwin-focused = false
+mark-wmwin-focused = true;
+
+# Mark override-redirect windows that doesn't have a child window with 'WM_STATE' focused.
+# mark-ovredir-focused = false
+mark-ovredir-focused = true;
+
+# Try to detect windows with rounded corners and don't consider them
+# shaped windows. The accuracy is not very high, unfortunately.
+#
+# detect-rounded-corners = false
+detect-rounded-corners = true;
+
+# Detect '_NET_WM_OPACITY' on client windows, useful for window managers
+# not passing '_NET_WM_OPACITY' of client windows to frame windows.
+#
+# detect-client-opacity = false
+detect-client-opacity = true;
+
+# Specify refresh rate of the screen. If not specified or 0, picom will
+# try detecting this with X RandR extension.
+#
+# refresh-rate = 60
+refresh-rate = 0
+
+# Limit picom to repaint at most once every 1 / 'refresh_rate' second to
+# boost performance. This should not be used with
+#   vsync drm/opengl/opengl-oml
+# as they essentially does sw-opti's job already,
+# unless you wish to specify a lower refresh rate than the actual value.
+#
+# sw-opti =
+
+# Use EWMH '_NET_ACTIVE_WINDOW' to determine currently focused window,
+# rather than listening to 'FocusIn'/'FocusOut' event. Might have more accuracy,
+# provided that the WM supports it.
+#
+# use-ewmh-active-win = false
+
+# Unredirect all windows if a full-screen opaque window is detected,
+# to maximize performance for full-screen windows. Known to cause flickering
+# when redirecting/unredirecting windows.
+#
+# unredir-if-possible = false
+
+# Delay before unredirecting the window, in milliseconds. Defaults to 0.
+# unredir-if-possible-delay = 0
+
+# Conditions of windows that shouldn't be considered full-screen for unredirecting screen.
+# unredir-if-possible-exclude = []
+
+# Use 'WM_TRANSIENT_FOR' to group windows, and consider windows
+# in the same group focused at the same time.
+#
+# detect-transient = false
+detect-transient = true
+
+# Use 'WM_CLIENT_LEADER' to group windows, and consider windows in the same
+# group focused at the same time. 'WM_TRANSIENT_FOR' has higher priority if
+# detect-transient is enabled, too.
+#
+# detect-client-leader = false
+detect-client-leader = true
+
+# Resize damaged region by a specific number of pixels.
+# A positive value enlarges it while a negative one shrinks it.
+# If the value is positive, those additional pixels will not be actually painted
+# to screen, only used in blur calculation, and such. (Due to technical limitations,
+# with use-damage, those pixels will still be incorrectly painted to screen.)
+# Primarily used to fix the line corruption issues of blur,
+# in which case you should use the blur radius value here
+# (e.g. with a 3x3 kernel, you should use `--resize-damage 1`,
+# with a 5x5 one you use `--resize-damage 2`, and so on).
+# May or may not work with *--glx-no-stencil*. Shrinking doesn't function correctly.
+#
+# resize-damage = 1
+
+# Specify a list of conditions of windows that should be painted with inverted color.
+# Resource-hogging, and is not well tested.
+#
+# invert-color-include = []
+
+# GLX backend: Avoid using stencil buffer, useful if you don't have a stencil buffer.
+# Might cause incorrect opacity when rendering transparent content (but never
+# practically happened) and may not work with blur-background.
+# My tests show a 15% performance boost. Recommended.
+#
+# glx-no-stencil = false
+
+# GLX backend: Avoid rebinding pixmap on window damage.
+# Probably could improve performance on rapid window content changes,
+# but is known to break things on some drivers (LLVMpipe, xf86-video-intel, etc.).
+# Recommended if it works.
+#
+# glx-no-rebind-pixmap = false
+
+# Disable the use of damage information.
+# This cause the whole screen to be redrawn everytime, instead of the part of the screen
+# has actually changed. Potentially degrades the performance, but might fix some artifacts.
+# The opposing option is use-damage
+#
+# no-use-damage = false
+use-damage = true
+
+# Use X Sync fence to sync clients' draw calls, to make sure all draw
+# calls are finished before picom starts drawing. Needed on nvidia-drivers
+# with GLX backend for some users.
+#
+# xrender-sync-fence = false
+
+# GLX backend: Use specified GLSL fragment shader for rendering window contents.
+# See `compton-default-fshader-win.glsl` and `compton-fake-transparency-fshader-win.glsl`
+# in the source tree for examples.
+#
+# glx-fshader-win = ''
+
+# Force all windows to be painted with blending. Useful if you
+# have a glx-fshader-win that could turn opaque pixels transparent.
+#
+# force-win-blend = false
+
+# Do not use EWMH to detect fullscreen windows.
+# Reverts to checking if a window is fullscreen based only on its size and coordinates.
+#
+# no-ewmh-fullscreen = false
+
+# Dimming bright windows so their brightness doesn't exceed this set value.
+# Brightness of a window is estimated by averaging all pixels in the window,
+# so this could comes with a performance hit.
+# Setting this to 1.0 disables this behaviour. Requires --use-damage to be disabled. (default: 1.0)
+#
+# max-brightness = 1.0
+
+# Make transparent windows clip other windows like non-transparent windows do,
+# instead of blending on top of them.
+#
+# transparent-clipping = false
+
+# Set the log level. Possible values are:
+#  "trace", "debug", "info", "warn", "error"
+# in increasing level of importance. Case doesn't matter.
+# If using the "TRACE" log level, it's better to log into a file
+# using *--log-file*, since it can generate a huge stream of logs.
+#
+# log-level = "debug"
+log-level = "warn";
+
+# Set the log file.
+# If *--log-file* is never specified, logs will be written to stderr.
+# Otherwise, logs will to written to the given file, though some of the early
+# logs might still be written to the stderr.
+# When setting this option from the config file, it is recommended to use an absolute path.
+#
+# log-file = '/path/to/your/log/file'
+
+# Show all X errors (for debugging)
+# show-all-xerrors = false
+
+# Write process ID to a file.
+# write-pid-path = '/path/to/your/log/file'
+
+# Window type settings
+#
+# 'WINDOW_TYPE' is one of the 15 window types defined in EWMH standard:
+#     "unknown", "desktop", "dock", "toolbar", "menu", "utility",
+#     "splash", "dialog", "normal", "dropdown_menu", "popup_menu",
+#     "tooltip", "notification", "combo", and "dnd".
+#
+# Following per window-type options are available: ::
+#
+#   fade, shadow:::
+#     Controls window-type-specific shadow and fade settings.
+#
+#   opacity:::
+#     Controls default opacity of the window type.
+#
+#   focus:::
+#     Controls whether the window of this type is to be always considered focused.
+#     (By default, all window types except "normal" and "dialog" has this on.)
+#
+#   full-shadow:::
+#     Controls whether shadow is drawn under the parts of the window that you
+#     normally won't be able to see. Useful when the window has parts of it
+#     transparent, and you want shadows in those areas.
+#
+#   redir-ignore:::
+#     Controls whether this type of windows should cause screen to become
+#     redirected again after been unredirected. If you have unredir-if-possible
+#     set, and doesn't want certain window to cause unnecessary screen redirection,
+#     you can set this to `true`.
+#
+wintypes:
+{
+  tooltip = { fade = true; shadow = true; opacity = 0.75; focus = true; full-shadow = false; };
+  dock = { shadow = false; }
+  dnd = { shadow = false; }
+  popup_menu = { opacity = 0.8; }
+  dropdown_menu = { opacity = 0.8; }
+};
+
+   #+end_src
+*** toggleCompositor
+
+    #+begin_src bash  :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle ~/.local/bin/toggleCompositorS
+     CMD="picom"
+
+     command -v "$CMD" > /dev/null || { echo "$CMD is not installed."; exit 1; }
+
+     usage() {
+     cat <<EOF
+     $(basename $0) -h [-t]
+     By default (re)starts $CMD, can also toggle it on or off
+     -h this message
+     -t toggle $CMD on or off
+     EOF
+     exit
+         }
+
+     while getopts "ht" opt; do
+         case $opt in
+             t) TOGGLE="true";;
+             ,*) usage ;;
+         esac
+     done
+     shift $(( OPTIND - 1 ))
+
+     if pgrep -x "$CMD"; then
+         [ "$TOGGLE" ] || [ $# -ne 0 ] && pkill -x "$CMD"
+     else
+         exec "$CMD" &
+     fi
+    #+end_src
+
 ** src/autostartS
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
 
    #+Caption: autostartS
-   #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostartS"
+   #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostartS"  :mkdirp yes
+
      echo "src/autostartS started - $(date)" >> ~/tmp/xmonad.log
-     wallpaper
+     wallpaperS
 
      if [ -z "$(pgrep unclutter)" ] ; then
          unclutter --timeout 4 --jitter 10 --ignore-scrolling -b
@@ -1509,6 +2018,10 @@ names = map projectName projects
 
      if [ -z "$(pgrep redshift)" ] ; then
          redshift &
+     fi
+
+     if [ -z "$(pgrep udiskie)" ] ; then
+         udiskie &
      fi
 
      # Daemons
@@ -1539,7 +2052,7 @@ names = map projectName projects
     Source: [[https://wiki.haskell.org/Xmonad/Frequently_asked_questions#I_need_to_find_the_class_title_or_some_other_X_property_of_my_program][Haskell wiki]]
 
     #+Caption: xmonpropS
-    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/xmonPropS"
+    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/xmonPropS"  :mkdirp yes
 
        exec xprop -notype \
         -f WM_NAME        8s ':\n  title =\? $0\n' \
@@ -1564,10 +2077,10 @@ WM_WINDOW_ROLE:  not found.
     #+end_example
 *** Keyboard indicator Mobar
 
-    To get the actual state, it uses [[https://github.com/nonpop/xkblayout-state][xkblayout-state]]:
+    To get the actual state, it uses [[https://github.com/nonpop/xkblayout-state][xkblayout-state]] (copy from ~/SRC/DESKTOP/xkblayout-state):
 
     #+Caption: myKbS
-    #+begin_src  shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKbS"
+    #+begin_src  shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/myKeyboardS"
       stdlayout=us  # standard layout takes "default" color
       stdname=en-us # arbitrary, descriptive only
 
@@ -2203,6 +2716,13 @@ dunstify -a "changeBrightness" -u low -i display-brightness-symbolic.symbolic -r
 "Brightness: ${brightness}%" "$(getProgressStringS 10 " " " " $exactBrightness)"
 
     #+end_src
+*** wallpaperS
+    #+begin_src shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/wallpaperS"
+
+    #feh --bg-scale ~/Pictures/BG/polymagnet.png &
+     feh --bg-scale ~/Pictures/BG/dark/archlinux.png &
+
+    #+end_src
 ** Sysadmin scripts
 *** menuEditConfigsS
 
@@ -2228,6 +2748,7 @@ zshrc
 zshenv
 zprofile
 aliases
+lf
 mpv
 picom
 qutebrowser
@@ -2240,6 +2761,8 @@ choice=`echo "$options" | $MENU_CMD "Edit config file: "`
 
 # Find the path to the chosen file
 case "$choice" in
+    lf)
+        file="$HOME/.config/lf/" ;;
     alacritty)
         file="$HOME/.config/alacritty/alacritty.yml"
     ;;
@@ -2358,21 +2881,26 @@ shoot && notify
 
 * Xmobar
 
+  [[https://xmobar.org/][xmobar - a minimalistic status bar]]
+
   Three kind of fonts used, regular, bold for the time, and [[https://fontawesome.com/icons][font-awesome]] for icons.
   Colors the same as in =xmonad.hs=.
 
   #+Caption: xmobar
   #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
   Config { position   = Top
-           , font              = "xft:Source Code Pro:size=9:bold:antialias=true"
-           , additionalFonts   = [ "xft:FontAwesome:pixelsize=16:antialias=true:hinting=true:style=Bold",
-                                   "xft:Noto Sans:size=10:style=Bold"]
+           , font              = "xft:NotoSansMono Nerd Font:size=10:style=Regular:antialias=true"
+           -- , additionalFonts   = [ "xft:Font Awesome 5 Free Regular:size=8:style=Regular",
+           , additionalFonts   = [ "xft:FontAwesome:size=8:style=Regular",
+                                    "xft:icomoon:size=10:style=Regular",
+                                    "xft:NotoSansMono Nerd Font:size=10:style=Bold"]
            , fgColor  = "#ffffff"
            , bgColor  = "#000000"
-           , alpha    = 150  -- 0 transparent, 255 opaque
+           , alpha    = 200  -- 0 transparent, 255 opaque
            , sepChar  = "%"
            , alignSep = "}{"
-           , template = " %StdinReader% }{ %cpu% %memory% %coretemp% %wi% %battery% %keyb% %date% "
+           -- , template = " %StdinReader% }{ %cpu% %memory% %coretemp% %wi% %battery% %keyb% %date% "
+           , template = " %StdinReader% }{ %wi% %battery% %keyb% %date% "
            , commands = [ Run StdinReader
                         , Run CoreTemp [ "--template" , "<core0>/<core1>°C"
                                        , "--Low"      , "70"
@@ -2381,15 +2909,15 @@ shoot && notify
                                        , "--normal"   , "#AA8800"
                                        , "--high"     , "#FF0000"
                                        ] 50 -- every 5s
-                       , Run Com "myKbS" [] "keyb" 20
-                       , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc> <total>%"
+                       , Run Com "myKeyboardS" [] "keyb" 20
+                       , Run Cpu [ "--template", "<fc=#a9a1e1><fn=1></fn></fc><total>%"
                                 , "--normal","#bbc2cf"
                                 , "-L", "40"
                                 , "-H", "60"
                                 , "-l", "#586e75"
                                 , "-h", "#dc322f" -- red
                                 ] 50
-                       , Run Memory ["-t","<fc=#51afef><fn=1>\xf2db</fn></fc> <usedratio>%"
+                       , Run Memory ["-t","<fc=#51afef><fn=1>\xf2db</fn></fc><usedratio>%"
                                     , "-H","80"
                                     , "-L","10"
                                     , "-l", "#586e75"
@@ -2399,14 +2927,14 @@ shoot && notify
                          [ "-a", "l"
                          , "-x", "-"
                          --, "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid> <quality>%</fc>"
-                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn> <essid></fc>"
+                         , "-t", "<fc=#6c71c4><fn=1>\xf1eb</fn><essid></fc>"
                          , "-L", "50"
                          , "-H", "75"
                          -- , "-l", "#dc322f" -- red
                          , "-l", "#6c71c4" -- violet
                          , "-n", "#6c71c4" -- violet
                          , "-h", "#6c71c4" -- violet
-                         ] 10
+                         ] 20
                        , Run Battery
                          [ "-t", "<fc=#b58900><acstatus></fc>"
                          , "-L", "20"
@@ -2416,15 +2944,15 @@ shoot && notify
                          , "-h", "#b58900"
                          , "--" -- battery specific options
                          -- discharging status
-                         , "-o"  , "<fn=1>\xf242</fn> <left>% (<timeleft>) <watts>"
+                         , "-o"  , "<fn=1>\xf242</fn><left>% (<timeleft>) <watts>"
                          -- AC "on" status
-                         , "-O"  , "<fn=1>\xf1e6</fn> <left>%"
+                         , "-O"  , "<fn=1>\xf1e6</fn><left>%"
                          -- charged status
-                         , "-i"  , "<fn=1>\xf1e6</fn> <left>%"
+                         , "-i"  , "<fn=1>\xf1e6</fn><left>%"
                          , "--off-icon-pattern", "<fn=1>\xf1e6</fn>"
                          , "--on-icon-pattern", "<fn=1>\xf1e6</fn>"
-                         ] 10
-                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn>%a %_d %b %Y d.%j w.%W</fc> <fc=#2AA198><fn=1>\xf017</fn><fn=2>%H:%M:%S</fn></fc>" "date" 10
+                         ] 20
+                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %D d.%j w.%W</fc> <fc=#2AA198><fn=1>\xf017</fn><fn=3> %H:%M:%S</fn></fc>" "date" 10
                         ]
            }
 
@@ -2437,7 +2965,6 @@ shoot && notify
      calendar-alt: \xf073 - 
      microchip:    \xf2db - 
    #+end_example
-
 
    #+Caption: xmobar debug version
    #+begin_src haskell :tangle "~/.config/xmobar/xmobarDebug.hs"
