@@ -11,9 +11,9 @@
 
 Source of this document [[https://github.com/QWxleA/literal-xmonad/blob/master/docs/ws.html][here on github]].
 
-**Note:** The source of this document does not always look nice, but otherwise my haskell sources wouldn't line up correctly
-
-Use Emacs to export this configuration, but be carefull as it might also overwrite other settings!
+**Notes:**
+- The source of this document does not look nice, but otherwise my haskell sources wouldn't line up correctly
+- Use Emacs to export this configuration, but be carefull as it might also overwrite other settings!
 
 * Build Xmonad
 
@@ -120,7 +120,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
      import XMonad.Config.Desktop                    -- default desktopConfig
      import XMonad.Hooks.EwmhDesktops                -- Fixes the automatic fullscreening & wmctrl
      import XMonad.Util.NamedActions (addDescrKeys') -- Don't use default key bindings
-     import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
+     -- import XMonad.Util.SpawnOnce (spawnOnce)        -- For running autostart only once (on login)
 
      import XMonad.Actions.DynamicProjects           -- For WS.projects
      import XMonad.Util.Run(spawnPipe)               -- For xmobar src/MyBar
@@ -146,7 +146,7 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
          xmonad                                                        -- applied over defaults
              $ dynamicProjects WS.projects                             -- See MyWorkspaces
-             $ addDescrKeys' (myCheatsheetKey, myCheatsheet) myKeys    -- See myCheatsheet
+             $ addDescrKeys' (myCheatsheetKey, showKeybindings) myKeys    -- See myCheatsheet
              $ ewmh desktopConfig                                      -- xdotool and wmtrl are great!
                { modMask            = myModMask
                , terminal           = myTerminal
@@ -199,12 +199,13 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
     myFileManager    = myTerminal ++ " -e lf "
     myGuiFileManager = "pcmanfm"
     myPdfReader      = "zathura"
-    myPrintScreen    = "screenshotS"
+    myPrintScreen    = "qwScreenshot"
     myAudiocontrol   = "pavucontrol"
     myTop            = myTerminal ++ " -e htop"
     myNews           = myTerminal ++ " -e newsboat"
     myIrc            = myTerminal ++ " -e tmux attach"
     myDu             = myTerminal ++ " -e ncdu ~"
+    myTODO           = "emacsclient -nc -F '((name . \"emacs-capture\"))' --eval '(org-capture nil \"t\")'"
 
     myMenu :: String
     myMenu = "rofi -dmenu -i -p"  -- For scripts that require user input
@@ -241,14 +242,6 @@ Use Emacs to export this configuration, but be carefull as it might also overwri
 
     myBorderWidth :: Dimension
     myBorderWidth = 2
-
-    -- Tab colours copied from DistroTube's config (at gitlab/dwt1)
-    myTabActiveColor         = "#46D9FF"
-    myTabInactiveColor       = "#313846"
-    myTabActiveBorderColor   = "#46D9FF"
-    myTabInactiveBorderColor = "#282C34"
-    myTabActiveTextColor     = "#282C34"
-    myTabInactiveTextColor   = "#D0D0D0"
 
     myFocusFollowsMouse  = False
     myClickJustFocuses   = True
@@ -420,8 +413,8 @@ myKeys conf = let
     subKeys name list = subtitle name : mkNamedKeymap conf list
 
     -- Abbreviations for certain actions
-    menuEditScript         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
-    menuEditConfig         = spawn $ args "menuEditConfigsS" [myMenu,myEditor]
+    menuEditScript    = spawn $ args "menuEditScripts" [myMenu,myEditor]
+    menuEditConfig    = spawn $ args "menuEditConfigs" [myMenu,myEditor]
 
     viewScreen s          = screenWorkspace s >>= flip whenJust (windows . W.view)
     shiftScreen s         = screenWorkspace s >>= flip whenJust (windows . W.shift)
@@ -469,10 +462,10 @@ myKeys conf = let
     --, ("M-S-i",                   addName "Send to previous"       $ )
     --] ^++^
     [ ("M-"++show key,            addName ("View workspace "++i)    $ windows $ W.greedyView i)
-        | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        | (key,i) <- zip ([1..9] ++ [0]) (XMonad.workspaces conf)
     ] ^++^
     [ ("M-S-"++show key,          addName ("Send to workspace "++i) $ windows $ W.shift i)
-        | (key,i) <- zip [1..9] (XMonad.workspaces conf)
+        | (key,i) <- zip ([1..9] ++ [0]) (XMonad.workspaces conf)
     ] ^++^
     [ ("M3-<Tab>"           , addName "Toggle last workspace"       $ toggleWS' ["NSP"])
     , ("M-<Right>"          , addName "Next non-empty workspace"    $ nextNonEmptyWS)
@@ -541,12 +534,14 @@ myKeys conf = let
     , ("M3-S-f"                  ,addName "Graphical file manager" $ spawn myGuiFileManager)
     , ("M3-w"                    ,addName "Web browser (minimal)"  $ spawn myBrowser)
     , ("M3-S-w"                  ,addName "Chromium"               $ spawn "chromium")
-    , ("M3-z"                    ,addName "Zoom"                   $ spawn "zoom")
+    , ("M3-u"                    ,addName "Disk Usage ~"           $ spawn myDu)
+    , ("M3-z"                    ,addName "Zoom.app"               $ spawn "zoom")
+    , ("M3-t"                    ,addName "Capture TODO"           $ spawn myTODO)
     ] ^++^
 
     subKeys "My (rofi) Scripts"
-    [ ("M3-p M3-p",                 addName "Edit scripts"        $ menuEditScript)
-    , ("M3-p M3-e",                 addName "Edit configs"        $ menuEditConfig)
+    [ ("M3-p M3-p",                 addName "Edit configs"        $ menuEditConfig)
+    , ("M3-p M3-e",                 addName "Edit scripts"        $ menuEditScript)
     ] ^++^
 
   #+end_src
@@ -554,23 +549,25 @@ myKeys conf = let
   #+CAPTION: Multimedia Keys
   #+begin_src haskell -n
     subKeys "Multimedia Keys"
-    [ ("<XF86AudioMute>"         ,addName "Toggle mute"           $ volumeAdjust "togmute")
-    , ("M3-<Space>"              ,addName "Toggle mute"           $ volumeAdjust "togmute")
-    , ("<XF86AudioLowerVolume>"  ,addName "Decrease volume"       $ volumeAdjust "down")
-    , ("<XF86AudioRaiseVolume>"  ,addName "Increase volume"       $ volumeAdjust "up")
-    , ("<XF86MonBrightnessDown>" ,addName "Decrease brightness"   $ spawn "backlightS -dec 10")
-    , ("<XF86MonBrightnessUp>"   ,addName "Increase brightness"   $ spawn "backlightS -inc 10")
-    , ("<XF86TouchpadToggle>"    ,addName "Toggle Touchpad"       $ spawn "toggleTouchpadS")
-    , ("<Print>"                 ,addName "Take screenshot"       $ spawn (myPrintScreen ++ " -n"))
-    , ("S-<Print>"               ,addName "Take screenshot menu"  $ spawn myPrintScreen)
-    , ("M-u p"                   ,addName "Play music"            $ spawn "mpc play")
-    , ("M-u ,"                   ,addName "Play next"             $ spawn "mpc next")
-    , ("M3-<Left>"               ,addName "Play next"             $ spawn "mpc next")
-    , ("M-u ."                   ,addName "Play previous"         $ spawn "mpc prev")
-    , ("M3-<Right>"              ,addName "Play previous"         $ spawn "mpc prev")
-    , ("M-u <Space>"             ,addName "Toggle play"           $ spawn "mpc toggle")
-    , ("M-u n"                   ,addName "Fetch TV url"          $ spawn "newseries -p")
-    , ("M-u /"                   ,addName "Music player"          $ namedScratchpadAction myScratchPads "myMusic")
+    [ ("<XF86AudioMute>"         ,addName "Toggle mute"            $ volumeAdjust "togmute")
+    , ("M3-<Space>"              ,addName "Toggle mute"            $ volumeAdjust "togmute")
+    , ("<XF86AudioLowerVolume>"  ,addName "Decrease volume"        $ volumeAdjust "down")
+    , ("<XF86AudioRaiseVolume>"  ,addName "Increase volume"        $ volumeAdjust "up")
+    , ("<XF86MonBrightnessDown>" ,addName "Decrease brightness"    $ spawn "backlightS -dec 10")
+    , ("<XF86MonBrightnessUp>"   ,addName "Increase brightness"    $ spawn "backlightS -inc 10")
+    , ("<XF86TouchpadToggle>"    ,addName "Toggle Touchpad"        $ spawn "toggleTouchpadS")
+    , ("<Print>"                 ,addName "Take screenshot"        $ spawn $ args myPrintScreen ["-n"])
+    , ("S-<Print>"               ,addName "Take screenshot menu"   $ spawn myPrintScreen)
+    , ("M-<Print>"               ,addName "Open screenshot folder" $ spawn $ args myTerminal ["-e","lf ~/Pictures/Screenshots"])
+    , ("M-u p"                   ,addName "Play music"             $ spawn "mpc play")
+    , ("M-u ,"                   ,addName "Play next"              $ spawn "mpc next")
+    , ("M3-<Right>"              ,addName "Play next"              $ spawn "mpc next")
+    , ("M-u ."                   ,addName "Play previous"          $ spawn "mpc prev")
+    , ("M3-<Left>"               ,addName "Play previous"          $ spawn "mpc prev")
+    , ("M-u <Space>"             ,addName "Toggle play"            $ spawn "mpc toggle")
+    , ("M-u S-<Space>"           ,addName "Toggle play"            $ spawn "mpc toggle")
+    , ("M-u n"                   ,addName "Fetch TV url"           $ spawn "newseries -p")
+    , ("M-u /"                   ,addName "Music player (Remove?)" $ namedScratchpadAction myScratchPads "myMusic")
     ] ^++^
 
   #+end_src
@@ -592,7 +589,7 @@ myKeys conf = let
     , ("M3-<F4>"      ,addName "Volume control" $ namedScratchpadAction myScratchPads "myPavu")
     , ("M3-<F5>"      ,addName "Music player"   $ namedScratchpadAction myScratchPads "myMusic")
     , ("M3-<F6>"      ,addName "Bitwarden"      $ namedScratchpadAction myScratchPads "myBitwarden")
-
+    , ("M3-<F7>"      ,addName "Mastodon"       $ namedScratchpadAction myScratchPads "myMastodon")
     ] ^++^
 
   #+end_src
@@ -703,7 +700,7 @@ import Options
 myLogHook :: Handle -> X ()
 myLogHook h = dynamicLogWithPP $ xmobarPP
                   { ppOutput          = hPutStrLn h
-                  , ppTitle           = xmobarColor active "" . shorten 35
+                  , ppTitle           = xmobarColor active "" . wrap "<fn=4>" "</fn>" . shorten 35
                   , ppVisible         = xmobarColor base0  "" . wrap "(" ")" . xmobarIcon
                   , ppUrgent          = xmobarColor red    "" . wrap " " " "
                   , ppSep             = xmobarColor red myNormalBorderColor " . "
@@ -754,6 +751,7 @@ xmobarIcon x = case (filter (/='[') $ filter (/=']') x) of
 -- "<fn=1>\xe743</fn>" -- "<fn=1>\xf0ac</fn>" -- "<fn=0>W</fn>"
                "emacs"    -> "<fn=1>\xf044</fn>"
                "xmonad"   -> "<fn=0>xm</fn>"
+               "current"  -> "<fc=#ab0000><fn=0>[X]</fn></fc>"
                "term"     -> "<fn=1>\xf044</fn>"
                "chat"     -> "<fn=1>\xf086</fn>"
                "scratch"  -> "<fn=1>\xf0ad</fn>"
@@ -834,7 +832,8 @@ import XMonad.Layout.Spiral
 --Support
 import XMonad.Layout.Master
 import XMonad.Layout.Magnifier
-import XMonad.Layout.LimitWindows (limitWindows, increaseLimit, decreaseLimit)
+import XMonad.Layout.LimitWindows (limitWindows, increaseLimit,
+                                   decreaseLimit)
 
 import XMonad.Hooks.ManageDocks (avoidStruts)
 import XMonad.Layout
@@ -929,12 +928,13 @@ myLayoutHook = avoidStruts
              $ onWorkspace "browsers"   webLayouts
              $ onWorkspace "zoom"       zoomLayouts
              $ onWorkspace "wine"       full
+             $ onWorkspace "tv"         tvLayouts
              $ onWorkspaces maxProj     maxLayouts
              $ onWorkspaces termProj    termLayouts
              $ onWorkspaces studyProj   studyLayouts
              $ defaultLayouts
              where
-               maxProj      = ["chat","emacs","tv"]
+               maxProj      = ["chat","emacs"]
                studyProj    = ["haskell","python"]
                termProj     = ["term","xmonad"]
                vidProj      = ["tmp"]
@@ -943,7 +943,8 @@ myLayoutHook = avoidStruts
                termLayouts  = readLayout ||| tall    ||| grid    ||| tabs ||| wide
                vidLayouts   = full       ||| grid    ||| tall
                webLayouts   = full       ||| tabs    ||| tiled
-               zoomLayouts  = readLayout ||| tabs    ||| magnify ||| floats
+               zoomLayouts  = readLayout ||| grid    ||| magnify
+               tvLayouts    = full       ||| tall    ||| readLayout
                defaultLayouts = tall
                                 ||| readLayout
                                 ||| tabLayout
@@ -974,12 +975,12 @@ mySpacing = spacingRaw True                -- Only for >1 window
 
 myTabConfig ::  Theme
 myTabConfig = def { fontName            = myFont
-                  , activeColor         = myTabActiveColor
-                  , inactiveColor       = myTabInactiveColor
-                  , activeBorderColor   = myTabActiveBorderColor
-                  , inactiveBorderColor = myTabInactiveBorderColor
-                  , activeTextColor     = myTabActiveTextColor
-                  , inactiveTextColor   = myTabInactiveTextColor
+                  , activeColor         = myFocusedBorderColor
+                  , inactiveColor       = myNormalBorderColor
+                  , activeBorderColor   = active
+                  , inactiveBorderColor = inactive
+                  , activeTextColor     = active
+                  , inactiveTextColor   = inactive
                   }
 
 #+end_src
@@ -1076,7 +1077,10 @@ manageSpecific = composeAll . concat $
 
     , [ className  =? "Chromium" <&&> role =? "GtkFileChooserDialog" --> largeFloat]
     , [ (title     =? "emacs-capture" )     --> smallFloat ]
-    , [ (title     =? "emacs-popup" )     -->  doRectFloat (W.RationalRect 0.1 0.3 0.7 0.7) ]
+    , [ (title     =? "emacs-popup" )       --> doRectFloat (W.RationalRect 0.1 0.3 0.7 0.7) ]
+    , [ (title     =? "emacs-big" )         --> doRectFloat (W.RationalRect 0.1 0.1 0.9 0.9) ]
+
+    , [ appName =? "localhost__preview_index.html"         --> doRectFloat (W.RationalRect 0.05 0.05 0.9 0.9) ]
 
     , [ (className =? "obs" <&&> title =? "Scripts" ) --> largeFloat ]
     , [ (className =? "obs" <&&> isDialog ) --> largeFloat ]
@@ -1144,22 +1148,35 @@ zoomFloat = doFloatDep move
   #+CAPTION: Cheatsheet definition
   #+begin_src haskell -n
     module MyCheatsheet
-    (myCheatsheet)
+    ( --myCheatsheet,
+    showKeybindings)
     where
 
-    import Data.List.Split (chunksOf)
+    -- import Data.List.Split (chunksOf)
     import System.IO
-    import Test.FitSpec.PrettyPrint (columns) -- Requires the 'fitspec' package
+    -- import Test.FitSpec.PrettyPrint (columns) -- Requires the 'fitspec' package
     import XMonad
     import XMonad.Util.NamedActions
     import XMonad.Util.Run
 
   #+end_src
 
+  #+CAPTION: Cheatsheet to xmonadviewer
+  #+begin_src haskell -n
+    showKeybindings :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
+    showKeybindings x = addName "Show Keybindings" $ io $ do
+        -- h <- spawnPipe "zenity --text-info --font=terminus"
+        h <- spawnPipe "xmonadviewer"
+        hPutStr h (unlines $ showKm x)
+        hClose h
+        return ()
+
+  #+end_src
+
   Pipe key bindings to dzen2:
 
   #+CAPTION: Cheatsheet pipe to dzen2
-  #+begin_src haskell -n
+  #+begin_src haskell -n :tangle no
     -- Number of colomns with with which to display the cheatsheet
     myCheatsheetCols :: Int
     myCheatsheetCols = 3
@@ -1269,7 +1286,7 @@ zoomFloat = doFloatDep move
 
   #+end_src
 
-* src/MyScratchpads
+* TODO [#A] src/MyScratchpads - cleanup repeating code
   :PROPERTIES:
   :header-args:  :tangle "~/.config/xmonad/src/MyScratchpads.hs"
   :END:
@@ -1302,6 +1319,7 @@ myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
                 , NS "myWhatsApp" spawnWhatsApp findWhatsApp manageWhatsApp
                 , NS "myProtonmail" spawnProtonmail findProtonmail manageProtonmail
                 , NS "myBitwarden" spawnBitwarden findBitwarden manageBitwarden
+                , NS "myMastodon" spawnMastodon findMastodon manageMastodon
                 ]
   where
     spawnTerm  = myTerminal ++ " --class scratchPad"
@@ -1347,6 +1365,14 @@ myScratchPads = [ NS "scratchpad" spawnTerm findTerm manageTerm
     spawnBitwarden  = "bitwarden"
     findBitwarden   = appName =? "bitwarden"
     manageBitwarden = customFloating $ W.RationalRect l t w h
+               where
+                 h = 0.9
+                 w = 0.9
+                 t = 0.95 -h
+                 l = 0.95 -w
+    spawnMastodon  = "chromium --app=https://ioc.exchange/"
+    findMastodon   = title =? "IOC.exchange - Chromium"
+    manageMastodon = customFloating $ W.RationalRect l t w h
                where
                  h = 0.9
                  w = 0.9
@@ -1414,7 +1440,7 @@ import Options                                                -- local settings
   #+begin_src haskell -n
 projects :: [Project]
 projects =
-  [ Project
+  [ Project -- 1
     { projectName = "browsers",
       projectDirectory = "~/Downloads",
       projectStartHook = Just $ do
@@ -1422,47 +1448,48 @@ projects =
         spawn "qutebrowser"
         spawn "chromium"
     },
-    Project
+    Project -- 2
     { projectName = "emacs",
       projectDirectory = "~/",
       projectStartHook = Just $ do
         -- sendMessage (JumpToLayout "Tall")
         spawn "emacsclient -c"
     },
-    Project
-    { projectName = "xmonad",
-      projectDirectory = "~/Projects/WS",
+    Project -- 3
+    { projectName = "current",
+      projectDirectory = "~/Projects/current",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "tall")
+        -- spawn "emacsclient -c '~/Projects/current'"
         spawn myTerminal
     },
-    Project
+    Project -- 4
     { projectName = "term",
       projectDirectory = "~/",
       projectStartHook = Just $ do
         -- sendMessage (JumpToLayout "Tall")
         spawn myTerminal
     },
-    Project
+    Project -- 5
     { projectName = "scratch",
       projectDirectory = "~/Desktop",
       projectStartHook = Nothing
     },
-    Project
+    Project -- 6
     { projectName = "chat",
       projectDirectory = "~/Downloads",
       projectStartHook = Just $ do
         -- sendMessage (JumpToLayout "Tall")
         spawn (myTerminal ++ " -e tmux attach")
     },
-    Project
+    Project -- 7
     { projectName = "docs",
       projectDirectory = "~/Documents/",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "Tall")
-        spawn myTerminal
+        spawn (myTerminal ++ " -e lf")
     },
-    Project
+    Project -- 8
     { projectName = "tv",
       projectDirectory = "~/Video",
       projectStartHook = Just $ do
@@ -1470,18 +1497,19 @@ projects =
         -- spawn "alaritty -e lf"
         spawn (myTerminal ++ " -e lf")
     },
-    Project
+    Project -- 9
     { projectName = "haskell",
       projectDirectory = "~/Video/Haskell",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "2/3")
         spawn myTerminal
     },
-    Project
+    Project -- 0
     { projectName = "python",
-      projectDirectory = "~/Video/Python",
+      projectDirectory = "~/Projects/Python",
       projectStartHook = Just $ do
         sendMessage (JumpToLayout "2/3")
+        spawn (myTerminal ++ " -e lf ~/Video/Python")
         spawn myTerminal
     },
     Project
@@ -1532,468 +1560,37 @@ names = map projectName projects
   #+end_src
 
 * External scripts & configs
-** Compositor - picom
+** Compositor - toggleCompositor
 
-   #+begin_src conf :tangle ~/.config/picom/picom.conf  :mkdirp yes
-#################################
-#             Shadows           #
-#################################
+   #+begin_src bash  :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle ~/.local/bin/toggleCompositorS
+CMD="picom"
 
+command -v "$CMD" > /dev/null || { echo "$CMD is not installed."; exit 1; }
 
-# Enabled client-side shadows on windows. Note desktop windows
-# (windows with '_NET_WM_WINDOW_TYPE_DESKTOP') never get shadow,
-# unless explicitly requested using the wintypes option.
-#
-# shadow = false
-shadow = true;
-
-# The blur radius for shadows, in pixels. (defaults to 12)
-# shadow-radius = 12
-shadow-radius = 7;
-
-# The opacity of shadows. (0.0 - 1.0, defaults to 0.75)
-# shadow-opacity = .75
-
-# The left offset for shadows, in pixels. (defaults to -15)
-# shadow-offset-x = -15
-shadow-offset-x = -7;
-
-# The top offset for shadows, in pixels. (defaults to -15)
-# shadow-offset-y = -15
-shadow-offset-y = -7;
-
-# Avoid drawing shadows on dock/panel windows. This option is deprecated,
-# you should use the *wintypes* option in your config file instead.
-#
-# no-dock-shadow = false
-
-# Don't draw shadows on drag-and-drop windows. This option is deprecated,
-# you should use the *wintypes* option in your config file instead.
-#
-# no-dnd-shadow = false
-
-# Red color value of shadow (0.0 - 1.0, defaults to 0).
-# shadow-red = 0
-
-# Green color value of shadow (0.0 - 1.0, defaults to 0).
-# shadow-green = 0
-
-# Blue color value of shadow (0.0 - 1.0, defaults to 0).
-# shadow-blue = 0
-
-# Do not paint shadows on shaped windows. Note shaped windows
-# here means windows setting its shape through X Shape extension.
-# Those using ARGB background is beyond our control.
-# Deprecated, use
-#   shadow-exclude = 'bounding_shaped'
-# or
-#   shadow-exclude = 'bounding_shaped && !rounded_corners'
-# instead.
-#
-# shadow-ignore-shaped = ''
-
-# Specify a list of conditions of windows that should have no shadow.
-#
-# examples:
-#   shadow-exclude = "n:e:Notification";
-#
-# shadow-exclude = []
-shadow-exclude = [
-  "name = 'Notification'",
-  "class_g = 'Conky'",
-  "class_g ?= 'Notify-osd'",
-  "class_g = 'Cairo-clock'",
-  "_GTK_FRAME_EXTENTS@:c"
-];
-
-# Specify a X geometry that describes the region in which shadow should not
-# be painted in, such as a dock window region. Use
-#    shadow-exclude-reg = "x10+0+0"
-# for example, if the 10 pixels on the bottom of the screen should not have shadows painted on.
-#
-# shadow-exclude-reg = ""
-
-# Crop shadow of a window fully on a particular Xinerama screen to the screen.
-# xinerama-shadow-crop = false
-
-
-#################################
-#           Fading              #
-#################################
-
-
-# Fade windows in/out when opening/closing and when opacity changes,
-#  unless no-fading-openclose is used.
-# fading = false
-fading = true
-
-# Opacity change between steps while fading in. (0.01 - 1.0, defaults to 0.028)
-# fade-in-step = 0.028
-fade-in-step = 0.03;
-
-# Opacity change between steps while fading out. (0.01 - 1.0, defaults to 0.03)
-# fade-out-step = 0.03
-fade-out-step = 0.03;
-
-# The time between steps in fade step, in milliseconds. (> 0, defaults to 10)
-# fade-delta = 10
-
-# Specify a list of conditions of windows that should not be faded.
-# fade-exclude = []
-
-# Do not fade on window open/close.
-# no-fading-openclose = false
-
-# Do not fade destroyed ARGB windows with WM frame. Workaround of bugs in Openbox, Fluxbox, etc.
-# no-fading-destroyed-argb = false
-
-
-#################################
-#   Transparency / Opacity      #
-#################################
-
-
-# Opacity of inactive windows. (0.1 - 1.0, defaults to 1.0)
-# inactive-opacity = 1
-inactive-opacity = 0.8;
-
-# Opacity of window titlebars and borders. (0.1 - 1.0, disabled by default)
-# frame-opacity = 1.0
-frame-opacity = 0.7;
-
-# Default opacity for dropdown menus and popup menus. (0.0 - 1.0, defaults to 1.0)
-# menu-opacity = 1.0
-
-# Let inactive opacity set by -i override the '_NET_WM_OPACITY' values of windows.
-# inactive-opacity-override = true
-inactive-opacity-override = false;
-
-# Default opacity for active windows. (0.0 - 1.0, defaults to 1.0)
-# active-opacity = 1.0
-
-# Dim inactive windows. (0.0 - 1.0, defaults to 0.0)
-# inactive-dim = 0.0
-
-# Specify a list of conditions of windows that should always be considered focused.
-# focus-exclude = []
-focus-exclude = [ "class_g = 'Cairo-clock'" ];
-
-# Use fixed inactive dim value, instead of adjusting according to window opacity.
-# inactive-dim-fixed = 1.0
-
-# Specify a list of opacity rules, in the format `PERCENT:PATTERN`,
-# like `50:name *= "Firefox"`. picom-trans is recommended over this.
-# Note we don't make any guarantee about possible conflicts with other
-# programs that set '_NET_WM_WINDOW_OPACITY' on frame or client windows.
-# example:
-#    opacity-rule = [ "80:class_g = 'URxvt'" ];
-#
-# opacity-rule = []
-#opacity-rule = [ "100name *=" ];
-opacity-rule = [
-  "100:class_g *= 'mpv'"
-];
-
-#################################
-#     Background-Blurring       #
-#################################
-
-
-# Parameters for background blurring, see the *BLUR* section for more information.
-# blur-method =
-# blur-size = 12
-#
-# blur-deviation = false
-
-# Blur background of semi-transparent / ARGB windows.
-# Bad in performance, with driver-dependent behavior.
-# The name of the switch may change without prior notifications.
-#
-# blur-background = false
-
-# Blur background of windows when the window frame is not opaque.
-# Implies:
-#    blur-background
-# Bad in performance, with driver-dependent behavior. The name may change.
-#
-# blur-background-frame = false
-
-
-# Use fixed blur strength rather than adjusting according to window opacity.
-# blur-background-fixed = false
-
-
-# Specify the blur convolution kernel, with the following format:
-# example:
-#   blur-kern = "5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";
-#
-# blur-kern = ''
-blur-kern = "3x3box";
-
-
-# Exclude conditions for background blur.
-# blur-background-exclude = []
-blur-background-exclude = [
-  "window_type = 'dock'",
-  "window_type = 'desktop'",
-  "_GTK_FRAME_EXTENTS@:c"
-];
-
-#################################
-#       General Settings        #
-#################################
-
-# Daemonize process. Fork to background after initialization. Causes issues with certain (badly-written) drivers.
-# daemon = false
-
-# Specify the backend to use: `xrender`, `glx`, or `xr_glx_hybrid`.
-# `xrender` is the default one.
-#
-# backend = 'glx'
-backend = "glx";
-
-# Enable/disable VSync.
-# vsync = false
-vsync = true
-
-# Enable remote control via D-Bus. See the *D-BUS API* section below for more details.
-# dbus = false
-
-# Try to detect WM windows (a non-override-redirect window with no
-# child that has 'WM_STATE') and mark them as active.
-#
-# mark-wmwin-focused = false
-mark-wmwin-focused = true;
-
-# Mark override-redirect windows that doesn't have a child window with 'WM_STATE' focused.
-# mark-ovredir-focused = false
-mark-ovredir-focused = true;
-
-# Try to detect windows with rounded corners and don't consider them
-# shaped windows. The accuracy is not very high, unfortunately.
-#
-# detect-rounded-corners = false
-detect-rounded-corners = true;
-
-# Detect '_NET_WM_OPACITY' on client windows, useful for window managers
-# not passing '_NET_WM_OPACITY' of client windows to frame windows.
-#
-# detect-client-opacity = false
-detect-client-opacity = true;
-
-# Specify refresh rate of the screen. If not specified or 0, picom will
-# try detecting this with X RandR extension.
-#
-# refresh-rate = 60
-refresh-rate = 0
-
-# Limit picom to repaint at most once every 1 / 'refresh_rate' second to
-# boost performance. This should not be used with
-#   vsync drm/opengl/opengl-oml
-# as they essentially does sw-opti's job already,
-# unless you wish to specify a lower refresh rate than the actual value.
-#
-# sw-opti =
-
-# Use EWMH '_NET_ACTIVE_WINDOW' to determine currently focused window,
-# rather than listening to 'FocusIn'/'FocusOut' event. Might have more accuracy,
-# provided that the WM supports it.
-#
-# use-ewmh-active-win = false
-
-# Unredirect all windows if a full-screen opaque window is detected,
-# to maximize performance for full-screen windows. Known to cause flickering
-# when redirecting/unredirecting windows.
-#
-# unredir-if-possible = false
-
-# Delay before unredirecting the window, in milliseconds. Defaults to 0.
-# unredir-if-possible-delay = 0
-
-# Conditions of windows that shouldn't be considered full-screen for unredirecting screen.
-# unredir-if-possible-exclude = []
-
-# Use 'WM_TRANSIENT_FOR' to group windows, and consider windows
-# in the same group focused at the same time.
-#
-# detect-transient = false
-detect-transient = true
-
-# Use 'WM_CLIENT_LEADER' to group windows, and consider windows in the same
-# group focused at the same time. 'WM_TRANSIENT_FOR' has higher priority if
-# detect-transient is enabled, too.
-#
-# detect-client-leader = false
-detect-client-leader = true
-
-# Resize damaged region by a specific number of pixels.
-# A positive value enlarges it while a negative one shrinks it.
-# If the value is positive, those additional pixels will not be actually painted
-# to screen, only used in blur calculation, and such. (Due to technical limitations,
-# with use-damage, those pixels will still be incorrectly painted to screen.)
-# Primarily used to fix the line corruption issues of blur,
-# in which case you should use the blur radius value here
-# (e.g. with a 3x3 kernel, you should use `--resize-damage 1`,
-# with a 5x5 one you use `--resize-damage 2`, and so on).
-# May or may not work with *--glx-no-stencil*. Shrinking doesn't function correctly.
-#
-# resize-damage = 1
-
-# Specify a list of conditions of windows that should be painted with inverted color.
-# Resource-hogging, and is not well tested.
-#
-# invert-color-include = []
-
-# GLX backend: Avoid using stencil buffer, useful if you don't have a stencil buffer.
-# Might cause incorrect opacity when rendering transparent content (but never
-# practically happened) and may not work with blur-background.
-# My tests show a 15% performance boost. Recommended.
-#
-# glx-no-stencil = false
-
-# GLX backend: Avoid rebinding pixmap on window damage.
-# Probably could improve performance on rapid window content changes,
-# but is known to break things on some drivers (LLVMpipe, xf86-video-intel, etc.).
-# Recommended if it works.
-#
-# glx-no-rebind-pixmap = false
-
-# Disable the use of damage information.
-# This cause the whole screen to be redrawn everytime, instead of the part of the screen
-# has actually changed. Potentially degrades the performance, but might fix some artifacts.
-# The opposing option is use-damage
-#
-# no-use-damage = false
-use-damage = true
-
-# Use X Sync fence to sync clients' draw calls, to make sure all draw
-# calls are finished before picom starts drawing. Needed on nvidia-drivers
-# with GLX backend for some users.
-#
-# xrender-sync-fence = false
-
-# GLX backend: Use specified GLSL fragment shader for rendering window contents.
-# See `compton-default-fshader-win.glsl` and `compton-fake-transparency-fshader-win.glsl`
-# in the source tree for examples.
-#
-# glx-fshader-win = ''
-
-# Force all windows to be painted with blending. Useful if you
-# have a glx-fshader-win that could turn opaque pixels transparent.
-#
-# force-win-blend = false
-
-# Do not use EWMH to detect fullscreen windows.
-# Reverts to checking if a window is fullscreen based only on its size and coordinates.
-#
-# no-ewmh-fullscreen = false
-
-# Dimming bright windows so their brightness doesn't exceed this set value.
-# Brightness of a window is estimated by averaging all pixels in the window,
-# so this could comes with a performance hit.
-# Setting this to 1.0 disables this behaviour. Requires --use-damage to be disabled. (default: 1.0)
-#
-# max-brightness = 1.0
-
-# Make transparent windows clip other windows like non-transparent windows do,
-# instead of blending on top of them.
-#
-# transparent-clipping = false
-
-# Set the log level. Possible values are:
-#  "trace", "debug", "info", "warn", "error"
-# in increasing level of importance. Case doesn't matter.
-# If using the "TRACE" log level, it's better to log into a file
-# using *--log-file*, since it can generate a huge stream of logs.
-#
-# log-level = "debug"
-log-level = "warn";
-
-# Set the log file.
-# If *--log-file* is never specified, logs will be written to stderr.
-# Otherwise, logs will to written to the given file, though some of the early
-# logs might still be written to the stderr.
-# When setting this option from the config file, it is recommended to use an absolute path.
-#
-# log-file = '/path/to/your/log/file'
-
-# Show all X errors (for debugging)
-# show-all-xerrors = false
-
-# Write process ID to a file.
-# write-pid-path = '/path/to/your/log/file'
-
-# Window type settings
-#
-# 'WINDOW_TYPE' is one of the 15 window types defined in EWMH standard:
-#     "unknown", "desktop", "dock", "toolbar", "menu", "utility",
-#     "splash", "dialog", "normal", "dropdown_menu", "popup_menu",
-#     "tooltip", "notification", "combo", and "dnd".
-#
-# Following per window-type options are available: ::
-#
-#   fade, shadow:::
-#     Controls window-type-specific shadow and fade settings.
-#
-#   opacity:::
-#     Controls default opacity of the window type.
-#
-#   focus:::
-#     Controls whether the window of this type is to be always considered focused.
-#     (By default, all window types except "normal" and "dialog" has this on.)
-#
-#   full-shadow:::
-#     Controls whether shadow is drawn under the parts of the window that you
-#     normally won't be able to see. Useful when the window has parts of it
-#     transparent, and you want shadows in those areas.
-#
-#   redir-ignore:::
-#     Controls whether this type of windows should cause screen to become
-#     redirected again after been unredirected. If you have unredir-if-possible
-#     set, and doesn't want certain window to cause unnecessary screen redirection,
-#     you can set this to `true`.
-#
-wintypes:
-{
-  tooltip = { fade = true; shadow = true; opacity = 0.75; focus = true; full-shadow = false; };
-  dock = { shadow = false; }
-  dnd = { shadow = false; }
-  popup_menu = { opacity = 0.8; }
-  dropdown_menu = { opacity = 0.8; }
-};
-
-   #+end_src
-*** toggleCompositor
-
-    #+begin_src bash  :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle ~/.local/bin/toggleCompositorS
-     CMD="picom"
-
-     command -v "$CMD" > /dev/null || { echo "$CMD is not installed."; exit 1; }
-
-     usage() {
-     cat <<EOF
+usage() {
+    cat <<-EOF
      $(basename $0) -h [-t]
      By default (re)starts $CMD, can also toggle it on or off
      -h this message
      -t toggle $CMD on or off
-     EOF
-     exit
-         }
+EOF
+    exit
+}
 
-     while getopts "ht" opt; do
-         case $opt in
-             t) TOGGLE="true";;
-             ,*) usage ;;
-         esac
-     done
-     shift $(( OPTIND - 1 ))
+while getopts "ht" opt; do
+    case $opt in
+        t) TOGGLE="true";;
+        ,*) usage ;;
+    esac
+done
+shift $(( OPTIND - 1 ))
 
-     if pgrep -x "$CMD"; then
-         [ "$TOGGLE" ] || [ $# -ne 0 ] && pkill -x "$CMD"
-     else
-         exec "$CMD" &
-     fi
-    #+end_src
+if pgrep -x "$CMD"; then
+    [ "$TOGGLE" ] || [ $# -ne 0 ] && pkill -x "$CMD"
+else
+    exec "$CMD" &
+fi
+   #+end_src
 
 ** src/autostartS
    Still haven't figured out what's best. Atm I use .xinitrc for most of this.
@@ -2001,6 +1598,7 @@ wintypes:
    #+Caption: autostartS
    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.config/xmonad/src/autostartS"  :mkdirp yes
 
+     mkdir -p ~/tmp
      echo "src/autostartS started - $(date)" >> ~/tmp/xmonad.log
      wallpaperS
 
@@ -2112,6 +1710,8 @@ WM_WINDOW_ROLE:  not found.
     #+end_src
 
 *** adjustVolumeS
+
+    Depends: bc
 
     Pulseaudio version, huge, see =adjustVolumeS help= ([[https://github.com/marioortizmanero/polybar-pulseaudio-control][source]]).
 
@@ -2723,13 +2323,13 @@ dunstify -a "changeBrightness" -u low -i display-brightness-symbolic.symbolic -r
      feh --bg-scale ~/Pictures/BG/dark/archlinux.png &
 
     #+end_src
-** Sysadmin scripts
+** COMMENT Sysadmin scripts
 *** menuEditConfigsS
 
     Small script that uses =rofi= to show my default config files.
 
     #+Caption: menuEditConfigsS
-    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o555) :tangle "~/.local/bin/menuEditConfigsS"
+    #+begin_src shell :shebang "#!/bin/sh" :tangle-mode (identity #o755) :tangle no # "~/bin/menuEditConfigs"
 # Adapted from https://www.gitlab.com/dwt1/dotfiles/-/blob/master/.dmenu/dmenu-edit-configs.sh
 
 die() {
@@ -2743,13 +2343,17 @@ MENU_CMD=$1
 EDITOR_CMD=$2
 
 # Options to pass to the menu program (list of config file names)
-options="alacritty
+options="menuEditConfigs
+alacritty
 zshrc
 zshenv
 zprofile
 aliases
+zshdirs
 lf
 mpv
+newsboat
+newsboat-urls
 picom
 qutebrowser
 xmonad.hs
@@ -2761,6 +2365,8 @@ choice=`echo "$options" | $MENU_CMD "Edit config file: "`
 
 # Find the path to the chosen file
 case "$choice" in
+    menuEditConfigs)
+       file="$HOME/bin/menuEditConfigs" ;;
     lf)
         file="$HOME/.config/lf/" ;;
     alacritty)
@@ -2775,11 +2381,20 @@ case "$choice" in
     aliases)
         file="$HOME/.config/shell/aliasrc"
     ;;
+    zshdirs)
+        file="$HOME/.config/shell/zshnameddirrc"
+    ;;
     picom)
         file="$HOME/.config/picom/picom.conf"
     ;;
     mpv)
         file="$HOME/.config/mpv/mpv.conf"
+    ;;
+    newsboat)
+        file="$HOME/.config/newsboat/config"
+    ;;
+    newsboat-urls)
+        file="$HOME/.config/newsboat/urls"
     ;;
     zprofile)
         file="$ZDOTDIR/.zprofile"
@@ -2802,83 +2417,6 @@ esac
 $EDITOR_CMD "$file"
 
     #+end_src
-** TODO Screenshots
-
-   # Recording
-   # Take screenshot
-   # Print: Record audio or video; Del: kill recording
-   super + Print
-   dmenurecord
-   super + Delete
-   dmenurecord kill
-
-   #+begin_src shell :shebang "#!/bin/bash" :tangle-mode (identity #o555) :tangle "~/.local/bin/screenshotS"
-APP="maim"
-LOCATION="$HOME/Pictures/Screenshots"
-FNAME="screenshot-$(date '+%Y-%m-%d-%H:%M:%S').png"
-TARGET="$LOCATION/$FNAME"
-SMALL="/tmp/$FNAME.tmp"
-CHOICE="Fullscreen"
-
-mkdir -p "$LOCATION"
-
-shoot() {
-    CHOICE=$(printf "Selected area\\nCurrent window\\nFull screen\\nSelected area (copy)\\nCurrent window (copy)\\nFll screen (copy)" | rofi -dmenu -l 6 -i -p "Screenshot which area?")
-
-    case "$CHOICE" in
-
-        "Selected area")
-            maim -s "$TARGET" ;;
-        "Current window")
-            maim -i "$(xdotool getactivewindow)"  "$TARGET" ;;
-        "Full screen")
-            sleep 0.5 && maim  "$TARGET" #Don't want the menu
-            ;;
-        "Selected area (copy)")
-            maim -s |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
-        "Current window (copy)")
-            maim -i "$(xdotool getactivewindow)" |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
-        "Full screen (copy)")
-            sleep 0.5 && maim |tee "$TARGET" | xclip -selection clipboard -t image/png ;;
-    esac
-}
-
-notify() {
-    convert "$TARGET" -resize 128x128  "$SMALL"
-    notify-send "$CHOICE" "screen-\nshot" -i "$SMALL"
-    rm "$SMALL"
-}
-
-usage() {
-    cat <<-EOF
-     $(basename $0) -h -n
-     -h this message
-     -n screenshot
-      If you use the script with -n, you get a fullscreen screenshot,
-     otherwise:
-     - Selected area
-     - Current window
-     - Full screen
-     - Selected area (copy)
-     - Current window (copy)
-     - Full screen (copy)
-EOF
-    exit
-}
-
-while getopts "hn" opt; do
-    case $opt in
-        n)
-            $APP "$TARGET" && notify
-            exit
-            ;;
-        ,*) usage ;;
-    esac
-done
-
-shoot && notify
-   #+end_src
-
 * Xmobar
 
   [[https://xmobar.org/][xmobar - a minimalistic status bar]]
@@ -2888,12 +2426,13 @@ shoot && notify
 
   #+Caption: xmobar
   #+begin_src haskell :tangle "~/.config/xmobar/xmobarrc.hs"
-  Config { position   = Top
-           , font              = "xft:NotoSansMono Nerd Font:size=10:style=Regular:antialias=true"
+  Config { position   = TopW C 90
+           , font              = "xft:NotoSansMono Nerd Font:size=8:style=Regular:antialias=true"
            -- , additionalFonts   = [ "xft:Font Awesome 5 Free Regular:size=8:style=Regular",
            , additionalFonts   = [ "xft:FontAwesome:size=8:style=Regular",
                                     "xft:icomoon:size=10:style=Regular",
-                                    "xft:NotoSansMono Nerd Font:size=10:style=Bold"]
+                                    "xft:NotoSansMono Nerd Font:size=10:style=Bold",
+                                    "xft:NotoSansMono Nerd Font:size=6:style=Regular"]
            , fgColor  = "#ffffff"
            , bgColor  = "#000000"
            , alpha    = 200  -- 0 transparent, 255 opaque
@@ -2952,7 +2491,7 @@ shoot && notify
                          , "--off-icon-pattern", "<fn=1>\xf1e6</fn>"
                          , "--on-icon-pattern", "<fn=1>\xf1e6</fn>"
                          ] 20
-                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %D d.%j w.%W</fc> <fc=#2AA198><fn=1>\xf017</fn><fn=3> %H:%M:%S</fn></fc>" "date" 10
+                       , Run Date "<fc=#268bd2><fn=1>\xf073</fn> %a %D d.%j w.%W</fc> <fc=#2AA198><fn=1>\xf017</fn><fn=3> %H:%M</fn></fc>" "date" 20
                         ]
            }
 
