@@ -9,7 +9,7 @@
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="res/org.css"/>
 #+EXPORT_FILE_NAME: index.html
 
-Source of this document [[http://qwxlea.ml/literal-xmonad/][here on github]].
+Source of this document [[https://github.com/QWxleA/literal-xmonad/][here on github]].
 **Notes:**
 - The source of this document does not look nice, but otherwise my haskell sources wouldn't line up correctly
 - Use Emacs to export this configuration, but be carefull as it might also overwrite other settings!
